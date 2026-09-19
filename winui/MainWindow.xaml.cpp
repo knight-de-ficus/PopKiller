@@ -15,6 +15,7 @@
 #include <winrt/Microsoft.Windows.AppNotifications.h>
 #include <winrt/Microsoft.Windows.AppNotifications.Builder.h>
 #include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Graphics.h>
 #include <chrono>
 #include "AppTheme.h"
 #include "winrt/Windows.UI.Xaml.Interop.h"
@@ -108,9 +109,17 @@ namespace winrt::winui::implementation
     MainWindow::MainWindow()
     {
         InitializeComponent();
+        Title(L"PopKiller");
+
+        this->AppWindow().Closing({ this, &MainWindow::HandleCloseRequested });
 
         this->Closed([](auto&&, auto&&)
             {
+                TrayIcon::OnExitRequested = nullptr;
+                TrayIcon::OnHideToTray = nullptr;
+                TrayIcon::OnRestoreFromTray = nullptr;
+                TrayIcon::Remove();
+                TrayIcon::Init(nullptr);
                 WindowPicker::Cancel();
                 PopupBlocker::ShuttingDown = true;
                 PopupBlocker::Stop();
@@ -158,21 +167,52 @@ namespace winrt::winui::implementation
             HWND hwnd{};
             if (SUCCEEDED(native->get_WindowHandle(&hwnd)) && hwnd)
             {
+                UINT dpi = ::GetDpiForWindow(hwnd);
+                this->AppWindow().Resize({
+                    ::MulDiv(900, dpi, 96),
+                    ::MulDiv(650, dpi, 96) });
+
                 ::SetWindowSubclass(hwnd, MinSizeSubclass, 0, 0);
                 TrayIcon::Init(hwnd);
 
-                TrayIcon::OnHideToTray = [this]()
+                auto weakThis = get_weak();
+
+                TrayIcon::OnExitRequested = [weakThis]()
                     {
-                        ContentFrame().Content(nullptr);
-                        SystemBackdrop(nullptr);
+                        if (auto self = weakThis.get())
+                        {
+                            // The tray callback runs inside the native window
+                            // procedure. Defer destruction until that message
+                            // has unwound so the subclass cannot be torn down
+                            // while it is still executing.
+                            self->DispatcherQueue().TryEnqueue([weakThis]()
+                                {
+                                    if (auto queuedSelf = weakThis.get())
+                                    {
+                                        queuedSelf->ExitApplication();
+                                    }
+                                });
+                        }
                     };
 
-                TrayIcon::OnRestoreFromTray = [this]()
+                TrayIcon::OnHideToTray = [weakThis]()
                     {
-                        if (AppTheme::Index == 1)
-                            SystemBackdrop(winrt::Microsoft::UI::Xaml::Media::MicaBackdrop());
+                        if (auto self = weakThis.get())
+                        {
+                            self->ContentFrame().Content(nullptr);
+                            self->SystemBackdrop(nullptr);
+                        }
+                    };
 
-                        auto item = NavView().SelectedItem().try_as<NavigationViewItem>();
+                TrayIcon::OnRestoreFromTray = [weakThis]()
+                    {
+                        auto self = weakThis.get();
+                        if (!self) return;
+
+                        if (AppTheme::Index == 1)
+                            self->SystemBackdrop(winrt::Microsoft::UI::Xaml::Media::MicaBackdrop());
+
+                        auto item = self->NavView().SelectedItem().try_as<NavigationViewItem>();
                         hstring tag;
                         if (item)
                         {
@@ -180,13 +220,13 @@ namespace winrt::winui::implementation
                         }
 
                         if (tag == L"Blocker")
-                            ContentFrame().Navigate(xaml_typename<winrt::winui::PopupBlockerPage>());
+                            self->ContentFrame().Navigate(xaml_typename<winrt::winui::PopupBlockerPage>());
                         else if (tag == L"BlockLog")
-                            ContentFrame().Navigate(xaml_typename<winrt::winui::BlockLogPage>());
+                            self->ContentFrame().Navigate(xaml_typename<winrt::winui::BlockLogPage>());
                         else if (tag == L"Home")
-                            ContentFrame().Navigate(xaml_typename<winrt::winui::HomePage>());
+                            self->ContentFrame().Navigate(xaml_typename<winrt::winui::HomePage>());
                         else
-                            ContentFrame().Navigate(xaml_typename<winrt::winui::SettingsPage>());
+                            self->ContentFrame().Navigate(xaml_typename<winrt::winui::SettingsPage>());
                     };
             }
         }
@@ -250,6 +290,85 @@ namespace winrt::winui::implementation
                 ::OutputDebugStringW(L"[PopKiller] Toast 未知异常\n");
             }
             };
+    }
+
+    void MainWindow::HandleCloseRequested(
+        winrt::Microsoft::UI::Windowing::AppWindow const&,
+        winrt::Microsoft::UI::Windowing::AppWindowClosingEventArgs const& args)
+    {
+        if (m_forceClose)
+        {
+            return;
+        }
+
+        int closeBehavior = AppSettings::ReadInt(L"UI", L"CloseBehavior", 0);
+        if (closeBehavior == 1)
+        {
+            // This is already the native close request. Let it complete instead
+            // of calling Close() recursively from inside the Closing callback.
+            m_forceClose = true;
+            return;
+        }
+
+        args.Cancel(true);
+
+        if (closeBehavior == 2)
+        {
+            TrayIcon::HideToTray();
+        }
+        else if (!m_closeDialogOpen)
+        {
+            ShowCloseConfirmation();
+        }
+    }
+
+    winrt::fire_and_forget MainWindow::ShowCloseConfirmation()
+    {
+        auto lifetime = get_strong();
+        m_closeDialogOpen = true;
+        try
+        {
+            auto root = Content().XamlRoot();
+            if (!root)
+            {
+                m_closeDialogOpen = false;
+                co_return;
+            }
+
+            ContentDialog dialog;
+            dialog.XamlRoot(root);
+            dialog.Title(box_value(L"关闭 PopKiller"));
+            dialog.Content(box_value(L"点击关闭窗口按钮时，PopKiller 应如何处理？可随时在设置中更改。"));
+            dialog.PrimaryButtonText(L"退出 PopKiller");
+            dialog.SecondaryButtonText(L"最小化到托盘");
+            dialog.CloseButtonText(L"取消");
+            dialog.DefaultButton(ContentDialogButton::Secondary);
+
+            auto result = co_await dialog.ShowAsync();
+            m_closeDialogOpen = false;
+
+            if (result == ContentDialogResult::Primary)
+            {
+                AppSettings::WriteInt(L"UI", L"CloseBehavior", 1);
+                ExitApplication();
+            }
+            else if (result == ContentDialogResult::Secondary)
+            {
+                AppSettings::WriteInt(L"UI", L"CloseBehavior", 2);
+                TrayIcon::HideToTray();
+            }
+        }
+        catch (...)
+        {
+            m_closeDialogOpen = false;
+            co_return;
+        }
+    }
+
+    void MainWindow::ExitApplication()
+    {
+        m_forceClose = true;
+        Close();
     }
 
     void MainWindow::NavView_SelectionChanged(NavigationView const&,

@@ -26,6 +26,7 @@ namespace TrayIcon
     inline bool Visible = false;
     inline std::function<void()> OnHideToTray;
     inline std::function<void()> OnRestoreFromTray;
+    inline std::function<void()> OnExitRequested;
 
     inline HICON GetIcon()
     {
@@ -209,14 +210,8 @@ namespace TrayIcon
         UpdateTrayState();
     }
 
-    inline bool Handle(UINT msg, WPARAM wp, LPARAM lp)
+    inline bool Handle(UINT msg, WPARAM, LPARAM lp)
     {
-        if (msg == WM_SYSCOMMAND && (wp & 0xFFF0) == SC_MINIMIZE)
-        {
-            HideToTray();
-            return true;
-        }
-
         if (msg == WM_TRAYICON)
         {
             UINT ev = static_cast<UINT>(lp);
@@ -263,7 +258,10 @@ namespace TrayIcon
 
                 if (cmd == IDM_TOGGLE) ToggleBlocker();
                 else if (cmd == IDM_SHOW) Restore();
-                else if (cmd == IDM_EXIT) ::PostMessageW(Hwnd, WM_CLOSE, 0, 0);
+                else if (cmd == IDM_EXIT) {
+                    if (OnExitRequested) OnExitRequested();
+                    else ::PostMessageW(Hwnd, WM_CLOSE, 0, 0);
+                }
                 else if (cmd >= IDM_PAUSE_5 && cmd <= IDM_PAUSE_60) {
                     int minutes = 0;
                     if (cmd == IDM_PAUSE_5) minutes = 5;

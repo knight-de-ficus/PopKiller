@@ -10,7 +10,7 @@
         </Grid.RowDefinitions>
 
         <Grid x:Name="AppTitleBar">
-            <TextBlock Text="winui" VerticalAlignment="Center" Margin="16,0,0,0" FontSize="14"
+            <TextBlock Text="PopKiller" VerticalAlignment="Center" Margin="16,0,0,0" FontSize="14"
                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
         </Grid>
 

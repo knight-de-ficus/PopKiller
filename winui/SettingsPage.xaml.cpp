@@ -51,6 +51,8 @@ namespace winrt::winui::implementation
         int mode = AppSettings::ReadInt(L"Blocker", L"HeuristicMode", 0);
         HeuristicModeCombo().SelectedIndex(ModeToIndex(mode));
         AutoStartToggle().IsOn(AutoStart::IsEnabled());
+        int closeBehavior = AppSettings::ReadInt(L"UI", L"CloseBehavior", 0);
+        CloseBehaviorCombo().SelectedIndex(closeBehavior >= 0 && closeBehavior <= 2 ? closeBehavior : 0);
         ThemeComboBox().SelectedIndex(AppTheme::Index);
         ForceBlockToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"ForceBlock", 0) == 1);
         MLHeuristicToggle().IsOn(PopupBlocker::MLHeuristic);
@@ -128,6 +130,18 @@ namespace winrt::winui::implementation
         bool on = toggle.IsOn();
         bool ok = on ? AutoStart::EnableAutoStartup() : AutoStart::DisableAutoStartup();
         if (!ok) toggle.IsOn(!on);
+    }
+
+    void SettingsPage::CloseBehaviorCombo_SelectionChanged(IInspectable const&,
+        Controls::SelectionChangedEventArgs const&)
+    {
+        if (!m_initialized) return;
+
+        int behavior = CloseBehaviorCombo().SelectedIndex();
+        if (behavior >= 0 && behavior <= 2)
+        {
+            AppSettings::WriteInt(L"UI", L"CloseBehavior", behavior);
+        }
     }
 
     void SettingsPage::MLHeuristicToggle_Toggled(IInspectable const&, RoutedEventArgs const&)

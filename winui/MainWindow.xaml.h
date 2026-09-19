@@ -13,7 +13,15 @@ namespace winrt::winui::implementation
         void NavigateToTag(winrt::hstring const& tag);
 
         void NavigateFrameToTag(winrt::hstring const& tag);
+        void HandleCloseRequested(
+            winrt::Microsoft::UI::Windowing::AppWindow const& sender,
+            winrt::Microsoft::UI::Windowing::AppWindowClosingEventArgs const& args);
+        winrt::fire_and_forget ShowCloseConfirmation();
+        void ExitApplication();
+
         winrt::hstring m_currentTag{ L"Home" };
+        bool m_forceClose{ false };
+        bool m_closeDialogOpen{ false };
     };
 }
 
