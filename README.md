@@ -1,4 +1,7 @@
 # PopKiller
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 > 基于 WinUI 3 (C++/WinRT) 的 Windows 弹窗拦截工具。
 > 通过黑白名单规则、共享规则库、启发式特征打分与静态机器学习模型，自动识别并关闭广告及流氓软件弹窗。
@@ -465,3 +468,25 @@ PopKiller/
 ## 许可证
 
 [MIT License](LICENSE.txt)
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="http://knightdf.cn"><img src="https://avatars.githubusercontent.com/u/97825853?v=4?s=100" width="100px;" alt="Knight Fang"/><br /><sub><b>Knight Fang</b></sub></a><br /><a href="https://github.com/lmg325586/PopKiller/commits?author=knight-de-ficus" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
