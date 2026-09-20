@@ -27,6 +27,7 @@
 - [贡献规则](#贡献规则)
 - [免责声明](#免责声明)
 - [许可证](#许可证)
+- [贡献者](#Contributors)
 
 ---
 
@@ -471,7 +472,7 @@ PopKiller/
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+Thanks goes to these wonderful people:
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
