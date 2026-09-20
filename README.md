@@ -472,7 +472,7 @@ PopKiller/
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people:
+感谢这些了不起的人:
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
