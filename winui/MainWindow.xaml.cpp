@@ -296,16 +296,11 @@ namespace winrt::winui::implementation
         winrt::Microsoft::UI::Windowing::AppWindow const&,
         winrt::Microsoft::UI::Windowing::AppWindowClosingEventArgs const& args)
     {
-        if (m_forceClose)
-        {
-            return;
-        }
+        if (m_forceClose) return;
 
-        int closeBehavior = AppSettings::ReadInt(L"UI", L"CloseBehavior", 0);
+        int closeBehavior = AppSettings::ReadInt(L"UI", L"CloseBehavior", -1); // 默认 -1
         if (closeBehavior == 1)
         {
-            // This is already the native close request. Let it complete instead
-            // of calling Close() recursively from inside the Closing callback.
             m_forceClose = true;
             return;
         }
@@ -335,6 +330,8 @@ namespace winrt::winui::implementation
                 co_return;
             }
 
+            bool remember = (AppSettings::ReadInt(L"UI", L"CloseBehavior", -1) == -1);
+
             ContentDialog dialog;
             dialog.XamlRoot(root);
             dialog.Title(box_value(L"关闭 PopKiller"));
@@ -349,12 +346,12 @@ namespace winrt::winui::implementation
 
             if (result == ContentDialogResult::Primary)
             {
-                AppSettings::WriteInt(L"UI", L"CloseBehavior", 1);
+                if (remember) AppSettings::WriteInt(L"UI", L"CloseBehavior", 1);
                 ExitApplication();
             }
             else if (result == ContentDialogResult::Secondary)
             {
-                AppSettings::WriteInt(L"UI", L"CloseBehavior", 2);
+                if (remember) AppSettings::WriteInt(L"UI", L"CloseBehavior", 2);
                 TrayIcon::HideToTray();
             }
         }

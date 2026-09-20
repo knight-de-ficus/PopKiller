@@ -51,7 +51,7 @@ namespace winrt::winui::implementation
         int mode = AppSettings::ReadInt(L"Blocker", L"HeuristicMode", 0);
         HeuristicModeCombo().SelectedIndex(ModeToIndex(mode));
         AutoStartToggle().IsOn(AutoStart::IsEnabled());
-        int closeBehavior = AppSettings::ReadInt(L"UI", L"CloseBehavior", 0);
+        int closeBehavior = AppSettings::ReadInt(L"UI", L"CloseBehavior", -1);
         CloseBehaviorCombo().SelectedIndex(closeBehavior >= 0 && closeBehavior <= 2 ? closeBehavior : 0);
         ThemeComboBox().SelectedIndex(AppTheme::Index);
         ForceBlockToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"ForceBlock", 0) == 1);
