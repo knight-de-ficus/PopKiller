@@ -16,7 +16,7 @@
   <mp:PhoneIdentity PhoneProductId="5d4fcdfa-facb-45bb-9998-d084269ed95c" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>winui</DisplayName>
+    <DisplayName>PopKiller</DisplayName>
     <PublisherDisplayName>ciallo</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -35,8 +35,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="winui"
-        Description="winui"
+        DisplayName="PopKiller"
+        Description="PopKiller"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

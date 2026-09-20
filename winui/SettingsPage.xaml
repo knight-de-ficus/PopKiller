@@ -12,7 +12,7 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1" CornerRadius="8" Padding="20,16">
                 <StackPanel Spacing="16">
-                    <TextBlock Text="外观" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <TextBlock Text="通用" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel VerticalAlignment="Center" Spacing="2">
@@ -25,6 +25,36 @@
                                   SelectionChanged="ThemeComboBox_SelectionChanged">
                             <ComboBoxItem Content="默认"/>
                             <ComboBoxItem Content="Mica"/>
+                        </ComboBox>
+                    </Grid>
+
+                    <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,4"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="开机自启" Style="{StaticResource BodyTextBlockStyle}"/>
+                            <TextBlock Text="随系统启动并在后台静默运行。"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ToggleSwitch x:Name="AutoStartToggle" Grid.Column="1" VerticalAlignment="Center"
+                                      OnContent="开" OffContent="关" Toggled="AutoStartToggle_Toggled"/>
+                    </Grid>
+
+                    <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}" Margin="0,4"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="点击关闭窗口按钮时" Style="{StaticResource BodyTextBlockStyle}"/>
+                            <TextBlock Text="关闭窗口时询问、完全退出程序，或最小化到系统托盘。"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ComboBox x:Name="CloseBehaviorCombo" Width="170" Grid.Column="1" VerticalAlignment="Center"
+                                  SelectionChanged="CloseBehaviorCombo_SelectionChanged">
+                            <ComboBoxItem Content="每次询问"/>
+                            <ComboBoxItem Content="完全退出"/>
+                            <ComboBoxItem Content="最小化到托盘"/>
                         </ComboBox>
                     </Grid>
                 </StackPanel>
@@ -100,25 +130,6 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="VerboseLogToggle" Grid.Column="1" VerticalAlignment="Center"
                                       OnContent="开" OffContent="关" Toggled="VerboseLogToggle_Toggled"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1" CornerRadius="8" Padding="20,16">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="常规" Style="{StaticResource SubtitleTextBlockStyle}"/>
-
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel VerticalAlignment="Center" Spacing="2">
-                            <TextBlock Text="开机自启" Style="{StaticResource BodyTextBlockStyle}"/>
-                            <TextBlock Text="随系统启动并在后台静默运行。"
-                                       Style="{StaticResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
-                        </StackPanel>
-                        <ToggleSwitch x:Name="AutoStartToggle" Grid.Column="1" VerticalAlignment="Center"
-                                      OnContent="开" OffContent="关" Toggled="AutoStartToggle_Toggled"/>
                     </Grid>
                 </StackPanel>
             </Border>
