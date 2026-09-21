@@ -21,7 +21,7 @@
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
     <MinimalCoreWin>true</MinimalCoreWin>
     <ProjectGuid>{9a73fd8a-0f1a-426b-aa35-26fe193717d1}</ProjectGuid>
-    <ProjectName>winui</ProjectName>
+    <ProjectName>PopKiller</ProjectName>
     <RootNamespace>winui</RootNamespace>
     <!--
       $(TargetName) should be same as $(RootNamespace) so that the produced binaries (.exe/.pri/etc.)
