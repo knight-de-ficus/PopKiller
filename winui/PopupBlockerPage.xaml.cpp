@@ -73,6 +73,8 @@ namespace winrt::winui::implementation
     {
         InitializeComponent();
 
+        this->NavigationCacheMode(Navigation::NavigationCacheMode::Required);
+
         m_statusTimer = DispatcherTimer();
         m_statusTimer.Interval(std::chrono::milliseconds{ 500 });
         m_statusTimer.Tick({ this, &PopupBlockerPage::StatusTimer_Tick });
@@ -85,20 +87,23 @@ namespace winrt::winui::implementation
 
         EnableToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"Enabled", 0) == 1);
 
-        PopupBlocker::EnabledChangedCallback = [this]()
+        this->Loaded([this](auto&&, auto&&)
             {
-                m_initialized = false;
-                EnableToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"Enabled", 0) == 1);
-                m_initialized = true;
-            };
-
-        PopupBlocker::CommunityRulesFetchCallback = [this](bool ok, std::wstring msg)
-            {
-                DispatcherQueue().TryEnqueue([this, ok, msg]()
+                PopupBlocker::EnabledChangedCallback = [this]()
                     {
-                        UpdateCommunityStatus(ok, msg);
-                    });
-            };
+                        m_initialized = false;
+                        EnableToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"Enabled", 0) == 1);
+                        m_initialized = true;
+                    };
+
+                PopupBlocker::CommunityRulesFetchCallback = [this](bool ok, std::wstring msg)
+                    {
+                        DispatcherQueue().TryEnqueue([this, ok, msg]()
+                            {
+                                UpdateCommunityStatus(ok, msg);
+                            });
+                    };
+            });
 
         this->Unloaded([this](auto&&, auto&&)
             {
