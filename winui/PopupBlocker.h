@@ -15,6 +15,9 @@
 #include "RuleStorage.h"
 #include <winrt/Windows.Web.Http.h>
 #include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Security.Cryptography.h>
+#include <winrt/Windows.Security.Cryptography.Core.h>
+#include <winrt/Windows.Storage.Streams.h>
 #include <cstdio>
 #include <cwchar>
 
@@ -147,23 +150,59 @@ namespace PopupBlocker
         RulesView = std::make_shared<const std::vector<Rule>>(Rules);
     }
 
+    inline std::wstring Sha256Hex(winrt::Windows::Storage::Streams::IBuffer const& buf)
+    {
+        using namespace winrt::Windows::Security::Cryptography;
+        using namespace winrt::Windows::Security::Cryptography::Core;
+        auto provider = HashAlgorithmProvider::OpenAlgorithm(HashAlgorithmNames::Sha256());
+        auto hashed = provider.HashData(buf);
+        return Lower(std::wstring(CryptographicBuffer::EncodeToHexString(hashed)));
+    }
+
+    inline std::wstring ParseExpectedSha(std::string const& text)
+    {
+        std::wstring w = Utf8ToWString(text);
+        auto pos = w.find(L':');
+        std::wstring hex = (pos != std::wstring::npos) ? w.substr(pos + 1) : w;
+        size_t b = hex.find_first_not_of(L" \t\r\n");
+        size_t e = hex.find_last_not_of(L" \t\r\n");
+        if (b == std::wstring::npos) return {};
+        return Lower(hex.substr(b, e - b + 1));
+    }
+
     inline winrt::Windows::Foundation::IAsyncAction FetchCommunityRulesAsync()
     {
         using namespace winrt::Windows::Web::Http;
         bool ok = false;
         std::wstring msg;
+        std::string body;
+        bool verified = false;
         try {
             HttpClient client;
-            std::wstring url = L"https://raw.githubusercontent.com/lmg325586/PopKiller/master/community_rules.json?t="
-                + std::to_wstring(::GetTickCount64());
-            winrt::Windows::Foundation::Uri uri(url);
+            std::wstring base = L"https://raw.githubusercontent.com/lmg325586/PopKiller/master/";
+            std::wstring tick = L"?t=" + std::to_wstring(::GetTickCount64());
 
-            HttpResponseMessage response = co_await client.GetAsync(uri);
-            if (response.StatusCode() != winrt::Windows::Web::Http::HttpStatusCode::Ok) {
-                msg = L"HTTP " + std::to_wstring(static_cast<int>(response.StatusCode()));
+            HttpResponseMessage shaResp = co_await client.GetAsync(
+                winrt::Windows::Foundation::Uri(base + L"community_rules_sha256" + tick));
+            if (shaResp.StatusCode() == winrt::Windows::Web::Http::HttpStatusCode::Ok) {
+                std::string shaText = winrt::to_string(co_await shaResp.Content().ReadAsStringAsync());
+                std::wstring expected = ParseExpectedSha(shaText);
+                if (expected.size() == 64) {
+                    HttpResponseMessage resp = co_await client.GetAsync(
+                        winrt::Windows::Foundation::Uri(base + L"community_rules.json" + tick));
+                    if (resp.StatusCode() == winrt::Windows::Web::Http::HttpStatusCode::Ok) {
+                        auto buf = co_await resp.Content().ReadAsBufferAsync();
+                        body.assign(reinterpret_cast<char const*>(buf.data()), buf.Length());
+                        if (Sha256Hex(buf) == expected) verified = true;
+                        else msg = L"SHA256 校验失败";
+                    }
+                    else msg = L"HTTP " + std::to_wstring(static_cast<int>(resp.StatusCode()));
+                }
+                else msg = L"校验文件格式错误";
             }
-            else {
-                std::string body = winrt::to_string(co_await response.Content().ReadAsStringAsync());
+            else msg = L"校验文件 HTTP " + std::to_wstring(static_cast<int>(shaResp.StatusCode()));
+
+            if (verified) {
                 std::vector<Rule> fetched;
                 if (ParseRulesFromJsonString(body, fetched)) {
                     for (auto& r : fetched) r.fromCommunity = true;

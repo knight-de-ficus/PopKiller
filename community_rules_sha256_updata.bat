@@ -1,0 +1,1 @@
+"SHA256:" + (Get-FileHash community_rules.json -Algorithm SHA256).Hash.ToLower() | Set-Content -NoNewline community_rules_sha256
