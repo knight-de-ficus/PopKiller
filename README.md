@@ -28,6 +28,7 @@
 - [免责声明](#免责声明)
 - [许可证](#许可证)
 - [贡献者](#contributors-)
+- [部分文档](winui/DOCUMENTATION.md)
 
 ---
 
@@ -40,13 +41,15 @@
 | **黑白名单** | 黑名单拦截，白名单放行，*白名单优先级最高* |
 | **规则编辑** | 选中已有规则可直接修改，无需删除后重加 |
 | **规则导入导出** | 一键导出规则为 JSON 文件备份或分享，导入时自动去重合并；可选择是否包含社区规则与墓碑记录 |
-| **社区规则库** | 启动时联网拉取仓库 `community_rules.json`，合并到本地规则，可编辑可删除，删除偏好自动记忆 |
+| **社区规则库** | 启动时联网拉取仓库 `community_rules.json`，**SHA256 完整性校验**，合并到本地规则，可编辑可删除，删除偏好自动记忆 |
+| **墓碑恢复** | 一键恢复所有已移除的社区规则，无需手动编辑 JSON |
 | **启发式打分** | 对 20 余项特征（窗口样式、进程路径、数字签名、进程年龄等）加权评分 |
 | **机器学习识别** | 内置随机森林与逻辑回归双 ONNX 模型，基于 23 维特征联合预测弹窗概率，当前为仅记录模式 |
 | **拦截通知** | 拦截到弹窗时在系统右下角弹出 Toast 通知，显示被拦截进程与窗口标题，可在设置中开关 |
 | **窗口拾取** | 点选目标窗口，提取进程 / 路径 / 类名 / 标题，一键生成规则 |
 | **主页导航** | 卡片式主页，展示系统信息与快捷入口，点击卡片直达对应功能页 |
 | **系统托盘** | 最小化到托盘，右键菜单快速切换拦截状态、跳转页面 |
+| **关闭行为** | 关闭窗口时选择：每次询问 / 完全退出 / 最小化到托盘 |
 | **日志系统** | 实时刷新拦截日志，支持搜索、过滤与详细日志模式 |
 
 ---
@@ -114,6 +117,14 @@
 - 删除社区规则后，该规则的键会被记入 `communityRemoved`，下次拉取时自动跳过；
 - 所有规则（包括社区规则）自动保存到程序同目录的 `rules.json`。
 
+### 恢复已移除的社区规则
+
+如果之前删除过社区规则（规则被记入墓碑），规则页面会出现「恢复已移除规则」按钮：
+
+1. 点击「恢复已移除规则」按钮；
+2. 程序清空墓碑记录并重新拉取社区规则，所有被移除的规则恢复显示；
+3. 没有墓碑记录时按钮自动隐藏。
+
 ### 导入导出规则
 
 点击规则列表标题右侧的「导入导出」按钮，进入导入导出页面。
@@ -137,9 +148,10 @@
 ### 社区规则库
 
 - 程序启动时自动从 GitHub 拉取最新 `community_rules.json`；
+- 拉取时同时获取 `community_rules_sha256` 校验文件，**SHA256 校验失败则拒绝应用**，防止文件被篡改或损坏；
 - 拉取的社区规则合并到本地规则列表中，**可编辑、可删除**；
 - 删除社区规则后，该规则的键会被记入 `communityRemoved` 列表，下次拉取时自动跳过；
-- 如需恢复已删除的社区规则，手动清空 `rules.json` 中的 `communityRemoved` 数组即可；
+- 点击「恢复已移除规则」可一键恢复所有被删除的社区规则；
 - 离线启动时使用上次缓存的规则；
 - 拉取失败时状态文本显示错误信息并出现「重试」按钮。
 
@@ -182,6 +194,16 @@
 - 通过注册表 `HKCU\...\CurrentVersion\Run` 实现，无需管理员权限；
 - 兼容 Windows 10/11 的 StartupApproved 机制，不会被系统静默禁用；
 - 如程序路径发生变化，下次启动时会自动更新注册表中的路径。
+
+### 关闭行为
+
+在「设置」页面可配置关闭主窗口时的行为：
+
+| 选项 | 说明 |
+| :--- | :--- |
+| **每次询问** | 关闭窗口时弹出对话框，让用户选择本次是退出还是最小化到托盘（可勾选"记住选择"） |
+| **完全退出** | 关闭窗口即退出程序，拦截引擎停止工作 |
+| **最小化到托盘** | 关闭窗口仅隐藏到系统托盘，拦截引擎继续后台运行 |
 
 ### 单实例运行
 
@@ -251,10 +273,12 @@
 ### 工作原理
 
 1. 程序启动时，从 GitHub 仓库根目录拉取 `community_rules.json`；
-2. 拉取成功后，社区规则合并到本地 `rules.json` 中，标记 `source: "community"`；
-3. 合并时自动去重，已存在的相同规则不会重复添加；
-4. 用户删除社区规则后，规则键记入 `communityRemoved`，下次拉取时自动跳过该规则；
-5. 离线启动时使用本地已缓存的规则。
+2. 同时拉取 `community_rules_sha256` 校验文件，对规则文件做 SHA256 完整性校验；
+3. 校验通过后，社区规则合并到本地 `rules.json` 中，标记 `source: "community"`；
+4. 合并时自动去重，已存在的相同规则不会重复添加；
+5. 用户删除社区规则后，规则键记入 `communityRemoved`，下次拉取时自动跳过该规则；
+6. 点击「恢复已移除规则」可清空墓碑并重新拉取所有社区规则；
+7. 离线启动时使用本地已缓存的规则。
 
 ### community_rules.json 格式
 
@@ -277,10 +301,12 @@
 
 1. Fork 本仓库；
 2. 编辑根目录下的 `community_rules.json`，按格式添加规则；
-3. 提交 PR，描述规则对应的弹窗来源和验证情况；
-4. 审核通过后合并，所有用户下次启动即可自动获取新规则。
+3. 运行 `community_rules_sha256_updata.bat`（或 `scripts/Update-CommunitySha.ps1`）更新 SHA256 校验文件；
+4. 提交 PR，描述规则对应的弹窗来源和验证情况；
+5. 审核通过后合并，所有用户下次启动即可自动获取新规则。
 
-> 注意：请勿提交针对正常软件的误杀规则。部分系统进程已内置白名单保护
+> 注意：请勿提交针对正常软件的误杀规则。部分系统进程已内置白名单保护。
+> 更新规则后务必同时更新 `community_rules_sha256`，否则用户端会因校验失败而拒绝应用新规则。
 
 ---
 
@@ -299,6 +325,7 @@
 | Blocker | VerboseLog | 0 | 详细日志（0=仅记录拦截，1=记录所有窗口） |
 | Blocker | ToastNotify | 1 | 拦截通知（0=关，1=开） |
 | UI | Material | 0 | 界面材质（0=普通，1=Mica） |
+| UI | CloseBehavior | -1 | 关闭行为（-1=每次询问，1=完全退出，2=最小化到托盘） |
 
 本地规则保存在同目录的 `rules.json`，拦截日志保存在 `blocklog.txt`，标注数据保存在 `labels.json`。
 
@@ -374,45 +401,49 @@ cd PopKiller
 
 ```
 PopKiller/
-├── community_rules.json      # 社区共享规则库
-├── README.md                  # 项目说明
-├── LICENSE.txt                # MIT 许可证
-├── winui.slnx                 # Visual Studio 解决方案
-├── scripts/                   # 构建脚本
-│   └── GenerateVersion.ps1    # 预构建版本号生成（日期 + git 哈希）
-├── StaticML/                  # 机器学习模型文件
-│   ├── popup_rf.onnx          # 随机森林模型
-│   └── popup_lr.onnx          # 逻辑回归模型
-├── ML/                        # 模型训练脚本
-│   ├── train.py               # 训练主脚本（5折交叉验证 + 多模型对比 + ONNX导出）
-│   ├── start.bat              # 训练启动脚本
-│   └── cache/                 # 样本缓存与去重
-│       ├── dedup.py           # 样本去重脚本
+├── community_rules.json          # 社区共享规则库
+├── community_rules_sha256       # 社区规则 SHA256 校验文件
+├── community_rules_sha256_updata.bat  # 一键更新 SHA256 脚本
+├── README.md                     # 项目说明
+├── LICENSE.txt                   # MIT 许可证
+├── winui.slnx                    # Visual Studio 解决方案
+├── .gitattributes                # Git 属性（规则文件标记为 binary，防止换行符转换）
+├── scripts/                      # 构建脚本
+│   ├── GenerateVersion.ps1      # 预构建版本号生成（日期 + git 哈希）
+│   └── Update-CommunitySha.ps1   # 更新 community_rules_sha256 的 PowerShell 脚本
+├── StaticML/                     # 机器学习模型文件
+│   ├── popup_rf.onnx              # 随机森林模型
+│   └── popup_lr.onnx              # 逻辑回归模型
+├── ML/                           # 模型训练脚本
+│   ├── train.py                   # 训练主脚本（5折交叉验证 + 多模型对比 + ONNX导出）
+│   ├── start.bat                  # 训练启动脚本
+│   └── cache/                     # 样本缓存与去重
+│       ├── dedup.py               # 样本去重脚本
 │       └── start.bat
-└── winui/                     # 主项目
-    ├── App.xaml(.cpp/.h)      # 应用入口（含单实例逻辑）
-    ├── MainWindow.xaml(.cpp/.h) # 主窗口（导航框架、托盘、最小尺寸）
-    ├── HomePage.xaml(.cpp/.h)   # 主页（系统信息卡片、导航卡片、辉光效果）
+└── winui/                         # 主项目
+    ├── App.xaml(.cpp/.h)          # 应用入口（含单实例逻辑）
+    ├── MainWindow.xaml(.cpp/.h)   # 主窗口（导航框架、托盘、最小尺寸、关闭行为）
+    ├── HomePage.xaml(.cpp/.h)     # 主页（系统信息卡片、导航卡片、辉光效果）
     ├── PopupBlockerPage.xaml(.cpp/.h) # 拦截规则页
     ├── RuleIOPage.xaml(.cpp/.h/.idl)  # 规则导入导出页
-    ├── SettingsPage.xaml(.cpp/.h)     # 设置页（外观、拦截、通知、自启、关于）
+    ├── SettingsPage.xaml(.cpp/.h)     # 设置页（外观、拦截、通知、自启、关闭行为、关于）
     ├── BlockLogPage.xaml(.cpp/.h)     # 拦截日志页（搜索、过滤）
     ├── LicensePage.xaml(.cpp/.h)      # 许可证页
-    ├── PopupBlocker.h          # 拦截引擎核心（钩子、匹配、日志、强杀、社区规则拉取、通知回调）
-    ├── HeuristicScorer.h       # 启发式打分引擎
-    ├── HeuristicML.h           # 静态机器学习识别（ONNX 双模型推理）
-    ├── RuleTypes.h             # 规则类型定义与工具函数
-    ├── RuleStorage.h           # 规则 JSON 读写存储与序列化
-    ├── LabelStorage.h          # 日志标注数据存储与训练样本导出
-    ├── FilePicker.h            # 公共文件选择器
-    ├── AutoStart.h             # 开机自启动管理
-    ├── WindowPicker.h          # 窗口拾取器
-    ├── TrayIcon.h              # 系统托盘
-    ├── AppSettings.h           # 配置读写（ini）
-    ├── AppTheme.h              # 主题与标题栏
-    ├── VersionInfo.h           # 自动生成的版本号（预构建脚本生成）
-    ├── winui.rc                # 版本资源文件
-    ├── vendor/json.hpp         # nlohmann/json 库
+    ├── PopupBlocker.h              # 拦截引擎核心（钩子、匹配、日志、强杀、社区规则拉取、SHA256校验、通知回调）
+    ├── HeuristicScorer.h           # 启发式打分引擎
+    ├── HeuristicML.h               # 静态机器学习识别（ONNX 双模型推理）
+    ├── RuleTypes.h                 # 规则类型定义与工具函数
+    ├── RuleStorage.h               # 规则 JSON 读写存储与序列化
+    ├── LabelStorage.h              # 日志标注数据存储与训练样本导出
+    ├── FilePicker.h                # 公共文件选择器
+    ├── AutoStart.h                 # 开机自启动管理
+    ├── WindowPicker.h              # 窗口拾取器
+    ├── TrayIcon.h                  # 系统托盘
+    ├── AppSettings.h               # 配置读写（ini）
+    ├── AppTheme.h                  # 主题与标题栏
+    ├── VersionInfo.h               # 自动生成的版本号（预构建脚本生成）
+    ├── winui.rc                    # 版本资源文件
+    ├── vendor/json.hpp             # nlohmann/json 库
     └── Assets/
 ```
 
@@ -440,6 +471,9 @@ PopKiller/
 - [x] 拦截通知（Toast）
 - [x] 主页卡片导航
 - [x] 预构建版本标记
+- [x] 社区规则 SHA256 完整性校验
+- [x] 墓碑恢复（一键恢复已移除的社区规则）
+- [x] 关闭行为选择（询问/退出/最小化到托盘）
 - [ ] 规则分组/标签
 
 ---
@@ -448,7 +482,7 @@ PopKiller/
 
 欢迎贡献代码、规则和反馈：
 
-1. **社区规则**：提交 PR 修改 `community_rules.json`，请在描述中说明规则对应的弹窗来源；
+1. **社区规则**：提交 PR 修改 `community_rules.json`，**提交前务必运行 `community_rules_sha256_updata.bat` 更新校验文件**，请在描述中说明规则对应的弹窗来源；
 2. **训练样本**：在日志页右键标注弹窗/误关，点击「导出训练数据」保存为 JSON，提交 PR 帮助优化机器学习模型；
 3. **功能建议**：欢迎在 Issue 中讨论新功能想法。
 
