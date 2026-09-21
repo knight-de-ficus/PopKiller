@@ -105,8 +105,8 @@ namespace PopupBlocker
 
     inline void SaveRules(std::vector<Rule> const& newRules)
     {
+        std::lock_guard lock(RulesMutex);//不得在持有 RulesMutex 时调用 SaveRules
         SaveRulesJson(newRules, CommunityRemoved);
-        std::lock_guard lock(RulesMutex);
         Rules = newRules;
         RulesView = std::make_shared<const std::vector<Rule>>(newRules);
     }

@@ -347,6 +347,7 @@ namespace winrt::winui::implementation
         }
 
         if (m_rules[real].fromCommunity) {
+            std::lock_guard lock(PopupBlocker::RulesMutex);
             PopupBlocker::CommunityRemoved.push_back(PopupBlocker::RuleKey(ToEngineRule(m_rules[real])));
         }
 
@@ -524,6 +525,7 @@ namespace winrt::winui::implementation
 
         auto& old = m_rules[real];
         if (old.fromCommunity) {
+            std::lock_guard lock(PopupBlocker::RulesMutex);
             PopupBlocker::CommunityRemoved.push_back(PopupBlocker::RuleKey(ToEngineRule(old)));
         }
         old = { listType, fieldType, matchMode, pattern, false };
