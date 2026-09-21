@@ -191,6 +191,8 @@ namespace winrt::winui::implementation
             if (!m_rules[i].fromCommunity) appendItem(i);
         for (size_t i = 0; i < m_rules.size(); ++i)
             if (m_rules[i].fromCommunity) appendItem(i);
+
+        UpdateCommunityRestoreButtonVisibility();
     }
 
     void PopupBlockerPage::Save()
