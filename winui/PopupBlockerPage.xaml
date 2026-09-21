@@ -137,11 +137,24 @@
                     <TextBox x:Name="SearchInput"
                              PlaceholderText="搜索规则"
                              TextChanged="SearchInput_TextChanged"/>
-                    <ListView x:Name="RulesList" Height="260"/>
+                    <ListView x:Name="RulesList" Height="260" SelectionMode="Single">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{Binding}" RightTapped="RuleItem_RightTapped">
+                                    <TextBlock.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="编辑" Icon="Edit" Click="EditRule_Click"/>
+                                            <MenuFlyoutItem Text="删除" Icon="Delete" Click="DeleteRule_Click"/>
+                                        </MenuFlyout>
+                                    </TextBlock.ContextFlyout>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
                 </StackPanel>
             </Border>
 
-            <TextBlock Text="支持黑名单拦截与白名单放行，白名单优先级更高。匹配模式支持包含（子串）、精确（全等）、通配符（支持 * 和 ?）。所有规则自动保存到程序同目录的 rules.json。"
+            <TextBlock Text="支持黑名单拦截与白名单放行，白名单优先级更高。匹配模式支持包含（子串）、精确（全等）、通配符（支持 * 和 ?）"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        TextWrapping="Wrap"/>

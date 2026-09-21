@@ -262,11 +262,20 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::EditRule_Click(IInspectable const&, RoutedEventArgs const&)
     {
-        int idx = RulesList().SelectedIndex();
-        if (idx < 0 || idx >= static_cast<int>(m_visibleIndex.size())) return;
-        size_t real = m_visibleIndex[static_cast<size_t>(idx)];
-        auto const& it = m_rules[real];
+        size_t real = (size_t)-1;
+        if (m_rightClickRealIndex != (size_t)-1 && m_rightClickRealIndex < m_rules.size())
+        {
+            real = m_rightClickRealIndex;
+            m_rightClickRealIndex = (size_t)-1;
+        }
+        else
+        {
+            int idx = RulesList().SelectedIndex();
+            if (idx < 0 || idx >= static_cast<int>(m_visibleIndex.size())) return;
+            real = m_visibleIndex[static_cast<size_t>(idx)];
+        }
 
+        auto const& it = m_rules[real];
         ListTypeCombo().SelectedIndex(it.listType);
         RuleTypeCombo().SelectedIndex(it.fieldType);
         MatchModeCombo().SelectedIndex(it.matchMode);
@@ -336,21 +345,28 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::DeleteRule_Click(IInspectable const&, RoutedEventArgs const&)
     {
-        int idx = RulesList().SelectedIndex();
-        if (idx < 0 || idx >= static_cast<int>(m_visibleIndex.size())) return;
+        size_t real = (size_t)-1;
+        if (m_rightClickRealIndex != (size_t)-1 && m_rightClickRealIndex < m_rules.size())
+        {
+            real = m_rightClickRealIndex;
+            m_rightClickRealIndex = (size_t)-1;
+        }
+        else
+        {
+            int idx = RulesList().SelectedIndex();
+            if (idx < 0 || idx >= static_cast<int>(m_visibleIndex.size())) return;
+            real = m_visibleIndex[static_cast<size_t>(idx)];
+        }
 
-        size_t real = m_visibleIndex[static_cast<size_t>(idx)];
         if (m_rules[real].fromCommunity) {
             PopupBlocker::CommunityRemoved.push_back(PopupBlocker::RuleKey(ToEngineRule(m_rules[real])));
         }
-
         if (m_editingIndex == static_cast<int>(real)) {
             m_editingIndex = -1;
         }
         else if (m_editingIndex > static_cast<int>(real)) {
             m_editingIndex--;
         }
-
         m_rules.erase(m_rules.begin() + real);
         Save();
         RefreshList();
@@ -452,5 +468,21 @@ namespace winrt::winui::implementation
     {
         ReloadRulesFromEngine();
         RefreshList();
+    }
+
+    void PopupBlockerPage::RuleItem_RightTapped(winrt::Windows::Foundation::IInspectable const& sender,
+        winrt::Microsoft::UI::Xaml::Input::RightTappedRoutedEventArgs const&)
+    {
+        m_rightClickRealIndex = (size_t)-1;
+        if (auto tb = sender.try_as<Controls::TextBlock>())
+        {
+            uint32_t uiIdx = 0;
+            if (RulesList().Items().IndexOf(box_value(tb.Text()), uiIdx)
+                && uiIdx < m_visibleIndex.size())
+            {
+                m_rightClickRealIndex = m_visibleIndex[uiIdx];
+                RulesList().SelectedIndex(uiIdx);
+            }
+        }
     }
 }

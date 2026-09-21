@@ -42,6 +42,9 @@ namespace winrt::winui::implementation
 
         void OnNavigatedTo(winrt::Microsoft::UI::Xaml::Navigation::NavigationEventArgs const& e);
 
+        void RuleItem_RightTapped(winrt::Windows::Foundation::IInspectable const& sender,
+            winrt::Microsoft::UI::Xaml::Input::RightTappedRoutedEventArgs const& args);
+
     private:
         void UpdateCommunityStatus(bool ok, std::wstring const& msg);
         void RefreshList();
@@ -63,6 +66,8 @@ namespace winrt::winui::implementation
         std::vector<RuleItem> m_rules;
         std::wstring m_searchText;
         std::vector<size_t> m_visibleIndex;
+
+        size_t m_rightClickRealIndex{ (size_t)-1 };
     };
 }
 

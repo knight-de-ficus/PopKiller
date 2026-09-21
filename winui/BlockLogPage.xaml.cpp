@@ -42,7 +42,7 @@ namespace
         t1.LowPart = ftLog.dwLowDateTime; t1.HighPart = ftLog.dwHighDateTime;
         t2.LowPart = ftNow.dwLowDateTime; t2.HighPart = ftNow.dwHighDateTime;
 
-        // FILETIME 单位是 100纳秒，除以 10000 得到毫秒
+
         long long diffMs = (t2.QuadPart - t1.QuadPart) / 10000;
         if (diffMs < 0) diffMs = 0;
 
@@ -218,14 +218,12 @@ namespace winrt::winui::implementation
         {
             const std::wstring& rawLine = *it;
 
-            // 搜索框过滤（大小写不敏感）
             if (!searchText.empty()) {
                 std::wstring lowerRaw = rawLine;
                 std::transform(lowerRaw.begin(), lowerRaw.end(), lowerRaw.begin(), ::towlower);
                 if (lowerRaw.find(searchText) == std::wstring::npos) continue;
             }
 
-            // 类别过滤
             bool passFilter = false;
             if (filterTag == L"all") {
                 passFilter = true;
