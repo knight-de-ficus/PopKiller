@@ -1,1 +1,4 @@
-"SHA256:" + (Get-FileHash community_rules.json -Algorithm SHA256).Hash.ToLower() | Set-Content -NoNewline community_rules_sha256
+@echo off
+cd /d "%~dp0"
+pwsh -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\Update-CommunitySha.ps1" %*
+pause
