@@ -61,6 +61,10 @@
 | `RulesMutex` | `std::mutex` | 规则读写锁 |
 | `CommunityRemoved` | `std::vector<std::wstring>` | 社区规则删除偏好（墓碑） |
 | `Running` | `std::atomic<bool>` | 引擎运行状态 |
+| `Paused` | `std::atomic<bool>` | 暂停拦截状态 |
+| `ShuttingDown` | `std::atomic<bool>` | 关闭中标志 |
+| `PauseDeadlineMs` | `std::atomic<long long>` | 暂停截止时间戳（ms） |
+| `PauseGen` | `std::atomic<int>` | 暂停代数（用于取消过期暂停） |
 | `ForceBlock` | `bool` | 强制拦截（命中即关） |
 | `SelfExe` | `std::wstring` | 自身 exe 小写名 |
 | `HeuristicMode` | `int` | 启发式模式（0关/1仅记录/2自动拦截） |
@@ -68,9 +72,33 @@
 | `VerboseLog` | `bool` | 详细日志开关 |
 | `MLHeuristic` | `bool` | 机器学习识别开关（仅记录） |
 | `ToastNotify` | `bool` | 拦截通知开关（默认开） |
+| `kMLArbLow` | `constexpr int` | ML 仲裁下限分数（35） |
+| `kMLArbHigh` | `constexpr int` | ML 仲裁上限分数（90） |
 | `EnabledChangedCallback` | `std::function<void()>` | 拦截状态变更回调 |
 | `CommunityRulesFetchCallback` | `std::function<void(bool, std::wstring)>` | 社区规则拉取完成回调 |
 | `BlockOccurredCallback` | `std::function<void(exeName, windowTitle, matchResult)>` | 拦截发生回调（用于 Toast 通知） |
+
+### ⚠️ 重要：避免死锁
+
+**切勿在持有 `RulesMutex` 锁时调用 `SaveRules`**。`SaveRules` 内部会尝试获取 `RulesMutex`，导致死锁。
+
+正确用法：
+```cpp
+// ✅ 正确：先复制数据，释放锁后再保存
+std::vector<Rule> rules;
+{ 
+    std::lock_guard lock(RulesMutex); 
+    rules = Rules; 
+} // 锁在此处释放
+SaveRules(rules); // 安全调用
+
+// ❌ 错误：在锁作用域内调用 SaveRules
+{
+    std::lock_guard lock(RulesMutex);
+    Rules = newRules;
+    SaveRules(Rules); // 死锁！
+}
+```
 
 ### 公共函数
 
@@ -83,9 +111,13 @@
 | `SaveRules(newRules)` | 规则列表 | `void` | 保存规则并刷新引擎缓存 |
 | `AddWhitelistExe(exe)` | exe 名 | `bool` | 添加白名单进程（去重） |
 | `SyncFromSettings()` | 无 | `void` | 刷新所有配置缓存（含 ToastNotify） |
-| `FetchCommunityRulesAsync()` | 无 | `IAsyncAction` | 联网拉取社区规则并合并 |
+| `Sha256Hex(buf)` | IBuffer | `std::wstring` | 计算 SHA256 十六进制串（小写） |
+| `ParseExpectedSha(text)` | UTF-8 文本 | `std::wstring` | 从响应文本解析期望的 SHA256 |
+| `FetchCommunityRulesAsync()` | 无 | `IAsyncAction` | 联网拉取社区规则并合并（SHA256 校验） |
 | `Start()` | 无 | `void` | 启动钩子线程（`Running` 置位） |
 | `Stop()` | 无 | `void` | `WM_QUIT` + join 线程 |
+| `PauseForMinutes(minutes)` | 分钟数 | `void` | 暂停拦截指定分钟，后台线程自动恢复 |
+| `ResumeNow()` | 无 | `void` | 立即恢复拦截（取消暂停） |
 | `WinEventProc(hook, event, hwnd, idObject, idChild, thread, time)` | 事件参数 | `void` | 入口：过滤→评估→执行→日志→通知 |
 
 ### detail 命名空间
@@ -106,6 +138,7 @@
 | `ScheduleForceKill(hwnd)` | 句柄 | `void` | 延迟 400ms 强杀进程线程（非系统路径） |
 | `EnforceBlock(hwnd, matchResult)` | 句柄、匹配结果 | `void` | 关闭/隐藏窗口，黑名单起强杀，触发通知回调 |
 | `ThreadMain(lp)` | 无 | `DWORD` | 挂 SHOW/FOREGROUND 双钩子 + 消息循环 |
+| `WinEventProc(hook, event, hwnd, idObject, idChild, thread, time)` | 事件参数 | `void` | 入口：过滤→评估→执行→日志→通知 |
 
 输出结构：`EventVerdict{ action, reason, detail, shouldBlock, shouldLog, matchResult }`。
 
@@ -119,6 +152,15 @@
 | `GetProcessPath(hwnd)` | 句柄 | `std::wstring` | 小写完整路径 |
 | `GetTitle(hwnd)` | 句柄 | `std::wstring` | 小写标题 |
 | `GetClass(hwnd)` | 句柄 | `std::wstring` | 小写类名 |
+| `CalcUserIdle(evTime)` | 事件时间 | `float` | 计算用户空闲秒数 |
+| `CalcFarFromMouse(rc)` | 窗口矩形 | `float` | 计算窗口距鼠标的归一化距离 |
+
+### 公共结构
+
+| 结构 | 说明 |
+|---|---|
+| `Weights` | 21 项权重配置表（`g_w` 全局实例） |
+| `Features` | 21 项特征结构（含 `path`、`cls` 等 wstring 字段） |
 
 ### 公共函数
 
@@ -129,7 +171,7 @@
 | `ProcessAgeSeconds(hwnd)` | 句柄 | `float` | 进程年龄秒，失败 -1 |
 | `IsFileSigned(path)` | 路径 | `bool` | WinVerifyTrust；有签名即 true |
 | `IsFileSignedCached(path)` | 路径 | `bool` | 带 `SigCache`+互斥锁缓存 |
-| `ExtractFeatures(hwnd)` | 句柄 | `Features` | 21 项特征（含 `path`、`cls`） |
+| `ExtractFeatures(hwnd, evTime)` | 句柄、事件时间 | `Features` | 21 项特征（含 `path`、`cls`） |
 | `BuildRawBits(f, rc, evTime)` | 特征、窗口矩形、事件时间 | `std::wstring` | 17 位 T/F 特征串（含空闲/鼠标距离） |
 | `ScoreWindow(f, detail&)` | 特征、明细串(out) | `int` | ≥0 分数；硬过滤时返回 0 且 detail 为 skip 标记 |
 
