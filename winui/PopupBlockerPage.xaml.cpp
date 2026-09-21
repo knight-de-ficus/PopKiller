@@ -158,6 +158,7 @@ namespace winrt::winui::implementation
             [](RuleItem const& r) { return !r.fromCommunity; });
 
         RefreshList();
+        UpdateCommunityRestoreButtonVisibility();
     }
 
     void PopupBlockerPage::RefreshList()
@@ -529,6 +530,42 @@ namespace winrt::winui::implementation
         }
         else {
             PickInfo().Text(L"");
+        }
+    }
+
+    void PopupBlockerPage::RestoreCommunity_Click(IInspectable const&, RoutedEventArgs const&)
+    {
+        bool changed = false;
+        std::vector<PopupBlocker::Rule> cur;
+        {
+            std::lock_guard lock(PopupBlocker::RulesMutex);
+            if (!PopupBlocker::CommunityRemoved.empty()) {
+                PopupBlocker::CommunityRemoved.clear();
+                changed = true;
+                cur = PopupBlocker::Rules;
+            }
+        }
+
+        if (changed) {
+            PopupBlocker::SaveRules(cur);
+
+            UpdateCommunityRestoreButtonVisibility();
+            CommunityStatusText().Text(L"正在重新合并社区规则…");
+            RetryFetchButton().Visibility(Visibility::Collapsed);
+
+            PopupBlocker::FetchCommunityRulesAsync();
+        }
+    }
+
+    void PopupBlockerPage::UpdateCommunityRestoreButtonVisibility()
+    {
+        bool hasTombs = false;
+        {
+            std::lock_guard lock(PopupBlocker::RulesMutex);
+            hasTombs = !PopupBlocker::CommunityRemoved.empty();
+        }
+        if (RestoreCommunityButton()) {
+            RestoreCommunityButton().Visibility(hasTombs ? Visibility::Visible : Visibility::Collapsed);
         }
     }
 }

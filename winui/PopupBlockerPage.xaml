@@ -63,6 +63,10 @@
                                     Visibility="Collapsed"
                                     Click="RetryFetchButton_Click"
                                     Padding="12,4"/>
+                            <Button x:Name="RestoreCommunityButton" Content="恢复已移除规则"
+                                Visibility="Collapsed"
+                                Click="RestoreCommunity_Click"
+                                Padding="12,4"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>

@@ -73,6 +73,10 @@ namespace winrt::winui::implementation
         std::vector<size_t> m_visibleIndex;
 
         size_t m_rightClickRealIndex{ (size_t)-1 };
+
+        void RestoreCommunity_Click(winrt::Windows::Foundation::IInspectable const& sender,
+            winrt::Microsoft::UI::Xaml::RoutedEventArgs const& args);
+        void UpdateCommunityRestoreButtonVisibility();
     };
 }
 
