@@ -14,5 +14,6 @@ namespace winui
         void EditRule_Click(Object sender, Microsoft.UI.Xaml.RoutedEventArgs args);
         void OpenIO_Click(Object sender, Microsoft.UI.Xaml.RoutedEventArgs args);
         void RuleItem_RightTapped(Object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs args);
+        void RuleItem_DoubleTapped(Object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs args);
     }
 }

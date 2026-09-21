@@ -44,6 +44,8 @@ namespace winrt::winui::implementation
 
         void RuleItem_RightTapped(winrt::Windows::Foundation::IInspectable const& sender,
             winrt::Microsoft::UI::Xaml::Input::RightTappedRoutedEventArgs const& args);
+        void RuleItem_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender,
+            winrt::Microsoft::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& args);
 
     private:
         void UpdateCommunityStatus(bool ok, std::wstring const& msg);
@@ -61,8 +63,11 @@ namespace winrt::winui::implementation
 
         PopupBlocker::Rule ToEngineRule(RuleItem const& it);
 
+        winrt::fire_and_forget OpenEditDialog(size_t real);
+
         bool m_initialized{ false };
-        int m_editingIndex{ -1 };
+
+
         std::vector<RuleItem> m_rules;
         std::wstring m_searchText;
         std::vector<size_t> m_visibleIndex;

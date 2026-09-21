@@ -275,13 +275,7 @@ namespace winrt::winui::implementation
             real = m_visibleIndex[static_cast<size_t>(idx)];
         }
 
-        auto const& it = m_rules[real];
-        ListTypeCombo().SelectedIndex(it.listType);
-        RuleTypeCombo().SelectedIndex(it.fieldType);
-        MatchModeCombo().SelectedIndex(it.matchMode);
-        PatternInput().Text(hstring(it.pattern));
-        m_editingIndex = static_cast<int>(real);
-        AddRuleButton().Content(box_value(hstring(L"保存修改")));
+        OpenEditDialog(real);
     }
 
     void PopupBlockerPage::AddRule_Click(IInspectable const&, RoutedEventArgs const&)
@@ -298,7 +292,6 @@ namespace winrt::winui::implementation
         bool conflict = false;
         for (size_t i = 0; i < m_rules.size(); ++i)
         {
-            if (static_cast<int>(i) == m_editingIndex) continue;
             auto const& r = m_rules[i];
             if (r.listType != listType &&
                 r.fieldType == fieldType &&
@@ -310,20 +303,7 @@ namespace winrt::winui::implementation
             }
         }
 
-        if (m_editingIndex >= 0 && m_editingIndex < static_cast<int>(m_rules.size()))
-        {
-            auto& old = m_rules[static_cast<size_t>(m_editingIndex)];
-            if (old.fromCommunity) {
-                PopupBlocker::CommunityRemoved.push_back(PopupBlocker::RuleKey(ToEngineRule(old)));
-            }
-            old = { listType, fieldType, matchMode, pattern, false };
-            m_editingIndex = -1;
-            AddRuleButton().Content(box_value(hstring(L"添加")));
-        }
-        else
-        {
-            m_rules.insert(m_rules.begin(), { listType, fieldType, matchMode, pattern, false });
-        }
+        m_rules.insert(m_rules.begin(), { listType, fieldType, matchMode, pattern, false });
 
         PatternInput().Text(L"");
         Save();
@@ -361,12 +341,7 @@ namespace winrt::winui::implementation
         if (m_rules[real].fromCommunity) {
             PopupBlocker::CommunityRemoved.push_back(PopupBlocker::RuleKey(ToEngineRule(m_rules[real])));
         }
-        if (m_editingIndex == static_cast<int>(real)) {
-            m_editingIndex = -1;
-        }
-        else if (m_editingIndex > static_cast<int>(real)) {
-            m_editingIndex--;
-        }
+
         m_rules.erase(m_rules.begin() + real);
         Save();
         RefreshList();
@@ -483,6 +458,77 @@ namespace winrt::winui::implementation
                 m_rightClickRealIndex = m_visibleIndex[uiIdx];
                 RulesList().SelectedIndex(uiIdx);
             }
+        }
+    }
+
+    void PopupBlockerPage::RuleItem_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender,
+        winrt::Microsoft::UI::Xaml::Input::DoubleTappedRoutedEventArgs const&)
+    {
+        if (auto tb = sender.try_as<Controls::TextBlock>())
+        {
+            uint32_t uiIdx = 0;
+            if (RulesList().Items().IndexOf(box_value(tb.Text()), uiIdx) && uiIdx < m_visibleIndex.size())
+                OpenEditDialog(m_visibleIndex[uiIdx]);
+        }
+    }
+
+    winrt::fire_and_forget PopupBlockerPage::OpenEditDialog(size_t real)
+    {
+        auto lifetime = get_strong();
+        if (real >= m_rules.size()) co_return;
+        auto const& it = m_rules[real];
+
+        EditDialog().XamlRoot(this->XamlRoot());
+        EditListTypeCombo().SelectedIndex(it.listType);
+        EditFieldCombo().SelectedIndex(it.fieldType);
+        EditMatchModeCombo().SelectedIndex(it.matchMode);
+        EditPatternInput().Text(hstring(it.pattern));
+        EditCommunityNote().Visibility(it.fromCommunity ? Visibility::Visible : Visibility::Collapsed);
+
+        auto result = co_await EditDialog().ShowAsync();
+        if (result != Controls::ContentDialogResult::Primary) co_return;
+
+        hstring text = EditPatternInput().Text();
+        if (text.empty())
+        {
+            PickInfo().Text(L"⚠ 模式串不能为空，未保存。");
+            PickInfo().Foreground(Media::SolidColorBrush(winrt::Windows::UI::Color{ 0xFF, 0xE6, 0xA2, 0x3C }));
+            co_return;
+        }
+
+        int listType = EditListTypeCombo().SelectedIndex();
+        int fieldType = EditFieldCombo().SelectedIndex();
+        int matchMode = EditMatchModeCombo().SelectedIndex();
+        std::wstring pattern{ text };
+        std::wstring patternLower = PopupBlocker::Lower(pattern);
+
+        bool conflict = false;
+        for (size_t i = 0; i < m_rules.size(); ++i)
+        {
+            if (i == real) continue;
+            auto const& r = m_rules[i];
+            if (r.listType != listType && r.fieldType == fieldType &&
+                r.matchMode == matchMode && PopupBlocker::Lower(r.pattern) == patternLower)
+            {
+                conflict = true; break;
+            }
+        }
+
+        auto& old = m_rules[real];
+        if (old.fromCommunity) {
+            PopupBlocker::CommunityRemoved.push_back(PopupBlocker::RuleKey(ToEngineRule(old)));
+        }
+        old = { listType, fieldType, matchMode, pattern, false };
+
+        Save();
+        RefreshList();
+
+        if (conflict) {
+            PickInfo().Text(L"⚠ 注意：已存在相同内容的相反名单规则；白名单优先，该窗口将被放行。");
+            PickInfo().Foreground(Media::SolidColorBrush(winrt::Windows::UI::Color{ 0xFF, 0xE6, 0xA2, 0x3C }));
+        }
+        else {
+            PickInfo().Text(L"");
         }
     }
 }
