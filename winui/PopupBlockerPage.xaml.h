@@ -47,6 +47,10 @@ namespace winrt::winui::implementation
         void RuleItem_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender,
             winrt::Microsoft::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& args);
 
+        void RestoreCommunity_Click(winrt::Windows::Foundation::IInspectable const& sender,
+            winrt::Microsoft::UI::Xaml::RoutedEventArgs const& args);
+        void UpdateCommunityRestoreButtonVisibility();
+
     private:
         void UpdateCommunityStatus(bool ok, std::wstring const& msg);
         void RefreshList();
@@ -74,9 +78,6 @@ namespace winrt::winui::implementation
 
         size_t m_rightClickRealIndex{ (size_t)-1 };
 
-        void RestoreCommunity_Click(winrt::Windows::Foundation::IInspectable const& sender,
-            winrt::Microsoft::UI::Xaml::RoutedEventArgs const& args);
-        void UpdateCommunityRestoreButtonVisibility();
     };
 }
 

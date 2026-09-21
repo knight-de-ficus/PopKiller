@@ -151,6 +151,16 @@
                     </Grid>
 
                     <Grid ColumnDefinitions="Auto,*">
+                        <TextBlock Text="项目主页" Style="{StaticResource BodyTextBlockStyle}" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Grid.Column="1" Margin="16,0,0,0" Style="{StaticResource BodyTextBlockStyle}">
+                            <Hyperlink NavigateUri="https://github.com/lmg325586/PopKiller">
+                                <Run Text="PopKiller"/>
+                            </Hyperlink>
+                        </TextBlock>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,*">
                         <TextBlock Text="许可证" Style="{StaticResource BodyTextBlockStyle}" 
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                         <HyperlinkButton Content="MIT License" Grid.Column="1" Padding="0" Margin="12,-4,0,0"
@@ -158,8 +168,9 @@
                     </Grid>
 
                     <Grid ColumnDefinitions="Auto,*">
-                        <TextBlock x:Name="VersionTextBlock" Text="Beta 0.5" Grid.Column="1" Margin="16,0,0,0" Style="{StaticResource BodyTextBlockStyle}"/>
-                        <TextBlock Text="Beta 0.7" Grid.Column="1" Margin="16,0,0,0" 
+                        <TextBlock Text="当前版本" Style="{StaticResource BodyTextBlockStyle}" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock x:Name="VersionTextBlock" Text="Beta 0.7" Grid.Column="1" Margin="16,0,0,0" 
                                    Style="{StaticResource BodyTextBlockStyle}"/>
                     </Grid>
 
