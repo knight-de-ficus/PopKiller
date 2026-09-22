@@ -168,7 +168,7 @@ namespace winrt::winui::implementation
 
         m_timer = DispatcherTimer();
         m_timer.Interval(std::chrono::seconds(1));
-        m_timer.Tick({ this, &BlockLogPage::Timer_Tick });
+        m_timer.Tick({ get_weak(), &BlockLogPage::Timer_Tick });
         m_timer.Start();
 
         this->Unloaded([this](auto&&, auto&&)
@@ -310,6 +310,8 @@ namespace winrt::winui::implementation
 
     void BlockLogPage::Timer_Tick(IInspectable const&, IInspectable const&)
     {
+        auto self = get_strong();
+        if (!self) return;
         Load();
     }
 

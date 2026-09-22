@@ -237,7 +237,8 @@ namespace PopupBlocker
             msg = L"网络错误";
         }
 
-        if (CommunityRulesFetchCallback) CommunityRulesFetchCallback(ok, msg);
+        auto callback = CommunityRulesFetchCallback;
+        if (callback) callback(ok, msg);
     }
 
     inline void CALLBACK WinEventProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
