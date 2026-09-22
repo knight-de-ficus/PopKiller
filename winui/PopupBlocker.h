@@ -237,7 +237,11 @@ namespace PopupBlocker
             msg = L"网络错误";
         }
 
-        if (CommunityRulesFetchCallback) CommunityRulesFetchCallback(ok, msg);
+        // Check ShuttingDown before invoking callback
+        if (ShuttingDown.load()) co_return;
+
+        auto callback = CommunityRulesFetchCallback;
+        if (callback) callback(ok, msg);
     }
 
     inline void CALLBACK WinEventProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
@@ -515,7 +519,8 @@ namespace PopupBlocker
         if (v.shouldBlock) {
             detail::EnforceBlock(hwnd, v.matchResult);
 
-            if (BlockOccurredCallback) {
+            // Check ShuttingDown before invoking callback
+            if (!ShuttingDown.load() && BlockOccurredCallback) {
                 BlockOccurredCallback(detail::GetProcessName(hwnd), detail::GetTitle(hwnd), v.matchResult);
             }
         }

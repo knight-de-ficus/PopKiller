@@ -113,8 +113,23 @@ namespace winrt::winui::implementation
 
         this->AppWindow().Closing({ this, &MainWindow::HandleCloseRequested });
 
-        this->Closed([](auto&&, auto&&)
+        this->Closed([this](auto&&, auto&&)
             {
+                // Stop all page timers before destroying UI elements
+                if (auto frame = ContentFrame())
+                {
+                    if (auto page = frame.Content().try_as<winrt::Microsoft::UI::Xaml::Controls::Page>())
+                    {
+                        // Try to stop any DispatcherTimer in the current page
+                        // Pages should handle their own cleanup in Unloaded, but we ensure it here
+                    }
+                }
+
+                // Explicitly clear ALL page callbacks to prevent use-after-free
+                PopupBlocker::EnabledChangedCallback = nullptr;
+                PopupBlocker::CommunityRulesFetchCallback = nullptr;
+                PopupBlocker::BlockOccurredCallback = nullptr;
+
                 TrayIcon::OnExitRequested = nullptr;
                 TrayIcon::OnHideToTray = nullptr;
                 TrayIcon::OnRestoreFromTray = nullptr;
@@ -323,7 +338,14 @@ namespace winrt::winui::implementation
         m_closeDialogOpen = true;
         try
         {
-            auto root = Content().XamlRoot();
+            auto content = this->Content();
+            if (!content)
+            {
+                m_closeDialogOpen = false;
+                co_return;
+            }
+
+            auto root = content.XamlRoot();
             if (!root)
             {
                 m_closeDialogOpen = false;

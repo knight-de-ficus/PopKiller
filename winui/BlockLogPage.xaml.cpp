@@ -164,16 +164,21 @@ namespace winrt::winui::implementation
     BlockLogPage::BlockLogPage()
     {
         InitializeComponent();
+        
+        this->NavigationCacheMode(Navigation::NavigationCacheMode::Required);
+
         Load();
 
         m_timer = DispatcherTimer();
         m_timer.Interval(std::chrono::seconds(1));
-        m_timer.Tick({ this, &BlockLogPage::Timer_Tick });
+        m_timer.Tick({ get_weak(), &BlockLogPage::Timer_Tick });
         m_timer.Start();
 
         this->Unloaded([this](auto&&, auto&&)
             {
                 if (m_timer) m_timer.Stop();
+                // Clear callback to prevent access after page is unloaded
+                PopupBlocker::BlockOccurredCallback = nullptr;
             });
     }
 
@@ -308,8 +313,25 @@ namespace winrt::winui::implementation
         ApplyFilter();
     }
 
+    void BlockLogPage::OnNavigatedTo(winrt::Microsoft::UI::Xaml::Navigation::NavigationEventArgs const&)
+    {
+        Load();
+    }
+
+    void BlockLogPage::OnNavigatedFrom(winrt::Microsoft::UI::Xaml::Navigation::NavigationEventArgs const&)
+    {
+        if (m_timer) m_timer.Stop();
+        // Clear callback to prevent access after page is navigated away
+        PopupBlocker::BlockOccurredCallback = nullptr;
+    }
+
     void BlockLogPage::Timer_Tick(IInspectable const&, IInspectable const&)
     {
+        if (PopupBlocker::ShuttingDown.load()) return;
+
+        auto strongThis = get_strong();
+        if (!strongThis) return;
+
         Load();
     }
 
@@ -433,5 +455,7 @@ namespace winrt::winui::implementation
     BlockLogPage::~BlockLogPage()
     {
         if (m_timer) m_timer.Stop();
+        // Clear callback to prevent access after page is destroyed
+        PopupBlocker::BlockOccurredCallback = nullptr;
     }
 }

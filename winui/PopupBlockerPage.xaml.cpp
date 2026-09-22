@@ -77,17 +77,17 @@ namespace winrt::winui::implementation
 
         m_statusTimer = DispatcherTimer();
         m_statusTimer.Interval(std::chrono::milliseconds{ 500 });
-        m_statusTimer.Tick({ this, &PopupBlockerPage::StatusTimer_Tick });
+        m_statusTimer.Tick({ get_weak(), &PopupBlockerPage::StatusTimer_Tick });
         m_statusTimer.Start();
         m_resumeButton = winrt::Microsoft::UI::Xaml::Controls::Button();
         m_resumeButton.Content(winrt::box_value(L"立即恢复"));
-        m_resumeButton.Click({ this, &PopupBlockerPage::ResumeButton_Click });
+        m_resumeButton.Click({ get_weak(), &PopupBlockerPage::ResumeButton_Click });
 
         PopupBlocker::EnsureDefaultRules();
 
         EnableToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"Enabled", 0) == 1);
 
-        this->Loaded([this](auto&&, auto&&)
+        auto setupCallbacks = [this]()
             {
                 PopupBlocker::EnabledChangedCallback = [this]()
                     {
@@ -98,15 +98,21 @@ namespace winrt::winui::implementation
 
                 PopupBlocker::CommunityRulesFetchCallback = [this](bool ok, std::wstring msg)
                     {
-                        DispatcherQueue().TryEnqueue([this, ok, msg]()
+                        DispatcherQueue().TryEnqueue([weakThis = get_weak(), ok, msg]()
                             {
-                                UpdateCommunityStatus(ok, msg);
+                                if (auto self = weakThis.get())
+                                {
+                                    self->UpdateCommunityStatus(ok, msg);
+                                }
                             });
                     };
-            });
+            };
+
+        this->Loaded([setupCallbacks](auto&&, auto&&) { setupCallbacks(); });
 
         this->Unloaded([this](auto&&, auto&&)
             {
+                if (m_statusTimer) m_statusTimer.Stop();
                 PopupBlocker::EnabledChangedCallback = nullptr;
                 PopupBlocker::CommunityRulesFetchCallback = nullptr;
             });
@@ -206,6 +212,9 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::EnableToggle_Toggled(IInspectable const&, RoutedEventArgs const&)
     {
+        auto self = get_strong();
+        if (!self) return;
+
         bool on = EnableToggle().IsOn();
         AppSettings::WriteInt(L"Blocker", L"Enabled", on ? 1 : 0);
         if (on)
@@ -224,6 +233,9 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::CommunityRulesToggle_Toggled(IInspectable const&, RoutedEventArgs const&)
     {
+        auto self = get_strong();
+        if (!self) return;
+
         if (!m_initialized) return;
         bool on = CommunityRulesToggle().IsOn();
         AppSettings::WriteInt(L"Blocker", L"CommunityRulesEnabled", on ? 1 : 0);
@@ -241,6 +253,9 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::UpdateCommunityStatus(bool ok, std::wstring const& msg)
     {
+        auto self = get_strong();
+        if (!self) return;
+
         if (!CommunityRulesToggle().IsOn()) {
             CommunityStatusText().Text(L"");
             RetryFetchButton().Visibility(Visibility::Collapsed);
@@ -263,6 +278,9 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::RetryFetchButton_Click(IInspectable const&, RoutedEventArgs const&)
     {
+        auto self = get_strong();
+        if (!self) return;
+
         CommunityStatusText().Text(L"正在拉取社区规则…");
         RetryFetchButton().Visibility(Visibility::Collapsed);
         PopupBlocker::FetchCommunityRulesAsync();
@@ -400,11 +418,16 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::StatusTimer_Tick(IInspectable const&, IInspectable const&)
     {
+        auto self = get_strong();
+        if (!self) return;
         RefreshStatus();
     }
 
     void PopupBlockerPage::RefreshStatus()
     {
+        auto self = get_strong();
+        if (!self) return;
+
         bool enabled = AppSettings::ReadInt(L"Blocker", L"Enabled", 0) == 1;
         bool paused = PopupBlocker::Paused.load();
 
@@ -454,6 +477,13 @@ namespace winrt::winui::implementation
         RefreshList();
     }
 
+    void PopupBlockerPage::OnNavigatedFrom(winrt::Microsoft::UI::Xaml::Navigation::NavigationEventArgs const&)
+    {
+        if (m_statusTimer) m_statusTimer.Stop();
+        PopupBlocker::EnabledChangedCallback = nullptr;
+        PopupBlocker::CommunityRulesFetchCallback = nullptr;
+    }
+
     void PopupBlockerPage::RuleItem_RightTapped(winrt::Windows::Foundation::IInspectable const& sender,
         winrt::Microsoft::UI::Xaml::Input::RightTappedRoutedEventArgs const&)
     {
@@ -487,7 +517,10 @@ namespace winrt::winui::implementation
         if (real >= m_rules.size()) co_return;
         auto const& it = m_rules[real];
 
-        EditDialog().XamlRoot(this->XamlRoot());
+        auto xamlRoot = this->XamlRoot();
+        if (!xamlRoot) co_return;
+
+        EditDialog().XamlRoot(xamlRoot);
         EditListTypeCombo().SelectedIndex(it.listType);
         EditFieldCombo().SelectedIndex(it.fieldType);
         EditMatchModeCombo().SelectedIndex(it.matchMode);
