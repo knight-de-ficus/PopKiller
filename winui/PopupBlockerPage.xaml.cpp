@@ -67,13 +67,16 @@ namespace winrt::winui::implementation
     PopupBlockerPage::~PopupBlockerPage()
     {
         if (m_statusTimer) m_statusTimer.Stop();
+        // Clear callbacks to prevent access after page is destroyed
+        PopupBlocker::EnabledChangedCallback = nullptr;
+        PopupBlocker::CommunityRulesFetchCallback = nullptr;
     }
 
     PopupBlockerPage::PopupBlockerPage()
     {
         InitializeComponent();
 
-        this->NavigationCacheMode(Navigation::NavigationCacheMode::Required);
+        this->NavigationCacheMode(Navigation::NavigationCacheMode::Disabled);
 
         m_statusTimer = DispatcherTimer();
         m_statusTimer.Interval(std::chrono::milliseconds{ 500 });
@@ -418,6 +421,8 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::StatusTimer_Tick(IInspectable const&, IInspectable const&)
     {
+        if (PopupBlocker::ShuttingDown.load()) return;
+
         auto self = get_strong();
         if (!self) return;
         RefreshStatus();

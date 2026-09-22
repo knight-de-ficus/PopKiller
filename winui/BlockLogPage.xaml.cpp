@@ -165,7 +165,7 @@ namespace winrt::winui::implementation
     {
         InitializeComponent();
         
-        this->NavigationCacheMode(Navigation::NavigationCacheMode::Required);
+        this->NavigationCacheMode(Navigation::NavigationCacheMode::Disabled);
 
         Load();
 
