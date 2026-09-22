@@ -519,7 +519,8 @@ namespace PopupBlocker
         if (v.shouldBlock) {
             detail::EnforceBlock(hwnd, v.matchResult);
 
-            if (BlockOccurredCallback) {
+            // Check ShuttingDown before invoking callback
+            if (!ShuttingDown.load() && BlockOccurredCallback) {
                 BlockOccurredCallback(detail::GetProcessName(hwnd), detail::GetTitle(hwnd), v.matchResult);
             }
         }
