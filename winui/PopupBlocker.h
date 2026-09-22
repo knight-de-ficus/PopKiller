@@ -237,6 +237,9 @@ namespace PopupBlocker
             msg = L"网络错误";
         }
 
+        // Check ShuttingDown before invoking callback
+        if (ShuttingDown.load()) return;
+
         auto callback = CommunityRulesFetchCallback;
         if (callback) callback(ok, msg);
     }

@@ -125,6 +125,10 @@ namespace winrt::winui::implementation
                     }
                 }
 
+                // Explicitly clear page callbacks to prevent use-after-free
+                PopupBlocker::EnabledChangedCallback = nullptr;
+                PopupBlocker::CommunityRulesFetchCallback = nullptr;
+
                 TrayIcon::OnExitRequested = nullptr;
                 TrayIcon::OnHideToTray = nullptr;
                 TrayIcon::OnRestoreFromTray = nullptr;

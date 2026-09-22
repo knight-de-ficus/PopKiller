@@ -164,6 +164,9 @@ namespace winrt::winui::implementation
     BlockLogPage::BlockLogPage()
     {
         InitializeComponent();
+        
+        this->NavigationCacheMode(Navigation::NavigationCacheMode::Required);
+
         Load();
 
         m_timer = DispatcherTimer();
@@ -306,6 +309,16 @@ namespace winrt::winui::implementation
     void BlockLogPage::Search_Changed(IInspectable const&, Controls::TextChangedEventArgs const&)
     {
         ApplyFilter();
+    }
+
+    void BlockLogPage::OnNavigatedTo(winrt::Microsoft::UI::Xaml::Navigation::NavigationEventArgs const&)
+    {
+        Load();
+    }
+
+    void BlockLogPage::OnNavigatedFrom(winrt::Microsoft::UI::Xaml::Navigation::NavigationEventArgs const&)
+    {
+        if (m_timer) m_timer.Stop();
     }
 
     void BlockLogPage::Timer_Tick(IInspectable const&, IInspectable const&)
