@@ -238,7 +238,7 @@ namespace PopupBlocker
         }
 
         // Check ShuttingDown before invoking callback
-        if (ShuttingDown.load()) return;
+        if (ShuttingDown.load()) co_return;
 
         auto callback = CommunityRulesFetchCallback;
         if (callback) callback(ok, msg);

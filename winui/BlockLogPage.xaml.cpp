@@ -323,8 +323,11 @@ namespace winrt::winui::implementation
 
     void BlockLogPage::Timer_Tick(IInspectable const&, IInspectable const&)
     {
-        auto self = get_strong();
-        if (!self) return;
+        if (PopupBlocker::ShuttingDown.load()) return;
+
+        auto strongThis = get_strong();
+        if (!strongThis) return;
+
         Load();
     }
 

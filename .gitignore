@@ -1,1 +1,38 @@
-Nothing should be ignored since only a header file (.h) was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
+```
+# Compiled and build artifacts
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+*.exp
+*.ilk
+*.iobj
+*.ipdb
+*.tlog
+*.lastbuildstate
+# Dependencies
+node_modules/
+# Editors
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+# Windows-specific
+Thumbs.db
+ehthumbs.db
+Icon?
+# Build outputs
+Debug/
+Release/
+x64/
+x86/
+build/
+dist/
+```
