@@ -27,6 +27,17 @@ namespace PopupBlocker
     inline std::vector<std::wstring> CommunityRemoved;
     inline std::function<void(bool, std::wstring)> CommunityRulesFetchCallback;
     inline std::mutex RulesMutex;
+
+    inline std::mutex CallbackMutex;
+
+    template <typename Sig, typename... Args>
+    inline void SafeInvoke(std::function<Sig>& slot, Args&&... args)
+    {
+        std::function<Sig> f;
+        { std::lock_guard lock(CallbackMutex); f = slot; }
+        if (f) f(std::forward<Args>(args)...);
+    }
+
     inline std::shared_ptr<const std::vector<Rule>> RulesView =
         std::make_shared<const std::vector<Rule>>();
     inline std::atomic<bool> Running{ false };
@@ -237,11 +248,10 @@ namespace PopupBlocker
             msg = L"网络错误";
         }
 
-        // Check ShuttingDown before invoking callback
         if (ShuttingDown.load()) co_return;
 
-        auto callback = CommunityRulesFetchCallback;
-        if (callback) callback(ok, msg);
+        // 【修改】使用 SafeInvoke 消除 Data Race
+        SafeInvoke(CommunityRulesFetchCallback, ok, msg);
     }
 
     inline void CALLBACK WinEventProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
@@ -519,9 +529,9 @@ namespace PopupBlocker
         if (v.shouldBlock) {
             detail::EnforceBlock(hwnd, v.matchResult);
 
-            // Check ShuttingDown before invoking callback
-            if (!ShuttingDown.load() && BlockOccurredCallback) {
-                BlockOccurredCallback(detail::GetProcessName(hwnd), detail::GetTitle(hwnd), v.matchResult);
+            // 【修改】使用 SafeInvoke 消除 TOCTOU 崩溃
+            if (!ShuttingDown.load()) {
+                SafeInvoke(BlockOccurredCallback, detail::GetProcessName(hwnd), detail::GetTitle(hwnd), v.matchResult);
             }
         }
     }

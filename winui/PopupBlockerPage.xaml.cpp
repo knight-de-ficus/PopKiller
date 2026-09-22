@@ -67,7 +67,8 @@ namespace winrt::winui::implementation
     PopupBlockerPage::~PopupBlockerPage()
     {
         if (m_statusTimer) m_statusTimer.Stop();
-        // Clear callbacks to prevent access after page is destroyed
+        // 加锁清空回调，防止引擎后台线程在页面析构瞬间调用
+        std::lock_guard lock(PopupBlocker::CallbackMutex);
         PopupBlocker::EnabledChangedCallback = nullptr;
         PopupBlocker::CommunityRulesFetchCallback = nullptr;
     }
@@ -90,32 +91,41 @@ namespace winrt::winui::implementation
 
         EnableToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"Enabled", 0) == 1);
 
-        auto setupCallbacks = [this]()
+        // 外层与内层 Lambda 全部捕获弱引用
+        auto setupCallbacks = [weakThis = get_weak()]()
             {
-                PopupBlocker::EnabledChangedCallback = [this]()
-                    {
-                        m_initialized = false;
-                        EnableToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"Enabled", 0) == 1);
-                        m_initialized = true;
-                    };
+                if (auto self = weakThis.get())
+                {
+                    PopupBlocker::EnabledChangedCallback = [weakThis]()
+                        {
+                            if (auto s = weakThis.get()) {
+                                s->m_initialized = false;
+                                s->EnableToggle().IsOn(AppSettings::ReadInt(L"Blocker", L"Enabled", 0) == 1);
+                                s->m_initialized = true;
+                            }
+                        };
 
-                PopupBlocker::CommunityRulesFetchCallback = [this](bool ok, std::wstring msg)
-                    {
-                        DispatcherQueue().TryEnqueue([weakThis = get_weak(), ok, msg]()
-                            {
-                                if (auto self = weakThis.get())
-                                {
-                                    self->UpdateCommunityStatus(ok, msg);
-                                }
-                            });
-                    };
+                    PopupBlocker::CommunityRulesFetchCallback = [weakThis](bool ok, std::wstring msg)
+                        {
+                            if (auto s = weakThis.get()) {
+                                s->DispatcherQueue().TryEnqueue([weakThis, ok, msg]()
+                                    {
+                                        if (auto s2 = weakThis.get()) s2->UpdateCommunityStatus(ok, msg);
+                                    });
+                            }
+                        };
+                }
             };
 
-        this->Loaded([setupCallbacks](auto&&, auto&&) { setupCallbacks(); });
+        this->Loaded([setupCallbacks](auto&&, auto&&) {
+            std::lock_guard lock(PopupBlocker::CallbackMutex);
+            setupCallbacks();
+            });
 
         this->Unloaded([this](auto&&, auto&&)
             {
                 if (m_statusTimer) m_statusTimer.Stop();
+                std::lock_guard lock(PopupBlocker::CallbackMutex);
                 PopupBlocker::EnabledChangedCallback = nullptr;
                 PopupBlocker::CommunityRulesFetchCallback = nullptr;
             });
@@ -485,6 +495,7 @@ namespace winrt::winui::implementation
     void PopupBlockerPage::OnNavigatedFrom(winrt::Microsoft::UI::Xaml::Navigation::NavigationEventArgs const&)
     {
         if (m_statusTimer) m_statusTimer.Stop();
+        std::lock_guard lock(PopupBlocker::CallbackMutex);
         PopupBlocker::EnabledChangedCallback = nullptr;
         PopupBlocker::CommunityRulesFetchCallback = nullptr;
     }
