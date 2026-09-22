@@ -55,12 +55,19 @@ namespace PopupBlocker
     }
 
     inline bool WriteUtf8StringToFile(std::wstring const& p, std::string const& text) {
-        HANDLE hf = ::CreateFileW(p.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
+        std::wstring tmp = p + L".tmp." + std::to_wstring(::GetCurrentThreadId());
+        HANDLE hf = ::CreateFileW(tmp.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
         if (hf == INVALID_HANDLE_VALUE) return false;
         DWORD wr{};
         bool ok = ::WriteFile(hf, text.data(), static_cast<DWORD>(text.size()), &wr, nullptr);
+        ::FlushFileBuffers(hf);
         ::CloseHandle(hf);
-        return ok;
+        if (!ok || wr != text.size()) { ::DeleteFileW(tmp.c_str()); return false; }
+        if (!::MoveFileExW(tmp.c_str(), p.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+            ::DeleteFileW(tmp.c_str());
+            return false;
+        }
+        return true;
     }
 
     inline bool ParseRuleLine(std::wstring const& line, Rule& r)
