@@ -177,6 +177,8 @@ namespace winrt::winui::implementation
         this->Unloaded([this](auto&&, auto&&)
             {
                 if (m_timer) m_timer.Stop();
+                // Clear callback to prevent access after page is unloaded
+                PopupBlocker::BlockOccurredCallback = nullptr;
             });
     }
 
@@ -319,6 +321,8 @@ namespace winrt::winui::implementation
     void BlockLogPage::OnNavigatedFrom(winrt::Microsoft::UI::Xaml::Navigation::NavigationEventArgs const&)
     {
         if (m_timer) m_timer.Stop();
+        // Clear callback to prevent access after page is navigated away
+        PopupBlocker::BlockOccurredCallback = nullptr;
     }
 
     void BlockLogPage::Timer_Tick(IInspectable const&, IInspectable const&)
@@ -451,5 +455,7 @@ namespace winrt::winui::implementation
     BlockLogPage::~BlockLogPage()
     {
         if (m_timer) m_timer.Stop();
+        // Clear callback to prevent access after page is destroyed
+        PopupBlocker::BlockOccurredCallback = nullptr;
     }
 }
