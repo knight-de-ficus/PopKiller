@@ -1,5 +1,5 @@
 ﻿# 函数输入输出参考
-> 基于当前 `master` 分支（Beta 0.7）代码由AI整理。
+> 基于当前 `master` 分支（Beta 0.7）代码由 AI 整理。
 
 ## AppSettings.h（配置读写）
 
@@ -19,7 +19,10 @@
 | `Lower(s)` | 原串 | `std::wstring` | 小写化 |
 | `RuleKey(r)` | 规则 | `std::wstring` | 生成规则唯一键（list+field+mode+pattern） |
 
-全局类型：`Rule{ list, field, mode, pattern, fromCommunity }`、`RuleList`(B/W)、`RuleField`(Exe/Path/Title/Class)、`RuleMode`(Contains/Exact/Wildcard)。
+全局类型：
+- `Rule{ isWhitelist, field, mode, pattern, fromCommunity }`
+- `RuleField`: `Exe`, `Path`, `Title`, `Class`
+- `MatchMode`: `Contains`, `Exact`, `Wildcard`
 
 ## RuleStorage.h（规则 JSON 存储）
 
@@ -247,10 +250,17 @@ SaveRules(rules); // 安全调用
 
 | 函数 | 输入 | 输出 | 说明/副作用 |
 |---|---|---|---|
-| `Create(hwnd)` | 主窗口句柄 | `bool` | 创建托盘图标（NOTIFYICONDATA） |
+| `Init(hwnd)` | 主窗口句柄 | `void` | 初始化托盘模块 |
+| `Add()` | 无 | `void` | 创建托盘图标（NOTIFYICONDATA） |
 | `Remove()` | 无 | `void` | 删除托盘图标 |
-| `ShowContextMenu(hwnd)` | 窗口句柄 | `void` | 弹出右键菜单（拦截开关/显示/退出） |
-| `HandleCommand(hwnd, id)` | 窗口句柄、菜单ID | `bool` | 处理菜单命令 |
+| `HideToTray()` | 无 | `void` | 隐藏主窗口到托盘，最小化工作集 |
+| `Restore()` | 无 | `void` | 从托盘恢复主窗口 |
+| `ToggleBlocker()` | 无 | `void` | 切换拦截开关，更新托盘状态 |
+| `UpdateTrayState()` | 无 | `void` | 根据运行/暂停状态更新托盘图标与提示文本 |
+| `Handle(msg, wp, lp)` | 消息参数 | `bool` | 处理托盘消息（左键恢复/右键菜单） |
+
+全局常量：`WM_TRAYICON`, `IDM_SHOW`, `IDM_EXIT`, `IDM_TOGGLE`, `IDM_PAUSE_*`, `IDM_RESUME`。
+全局状态：`Hwnd`, `Visible`, `OnHideToTray`, `OnRestoreFromTray`, `OnExitRequested`, `IconNormal`, `IconGray`。
 
 ## AppTheme.h（主题与标题栏）
 
@@ -344,3 +354,9 @@ SaveRules(rules); // 安全调用
 | `ReplaceAll(s, from, to)` | 串、from、to | `void` | 全局替换（in-place） |
 | `TranslateTokenName(s, en, zh)` | 串、英文、中文 | `void` | 替换启发式得分项名为中文 |
 | `TranslateLogLine(raw)` | 原始日志行 | `std::wstring` | 整行翻译为中文显示 |
+
+## 更新日志
+
+| 版本 | 日期 | 变更说明 |
+|---|---|---|
+| Beta 0.7 | - | 初始版本 |
