@@ -130,6 +130,10 @@ try {
     [void]$sb.AppendLine('    <Binary Id="CleanupCA" SourceFile="' + (Esc $caDll) + '" />')
     [void]$sb.AppendLine('    <CustomAction Id="DeleteLeftovers" BinaryRef="CleanupCA" DllEntry="DeleteLeftovers" Execute="deferred" Impersonate="yes" Return="ignore" />')
     [void]$sb.AppendLine('    <CustomAction Id="SetDeleteLeftoversData" Property="DeleteLeftovers" Value="[INSTALLFOLDER]" Execute="immediate" />')
+    [void]$sb.AppendLine('    <CustomAction Id="BackupRuntimeData" BinaryRef="CleanupCA" DllEntry="BackupRuntimeData" Execute="immediate" Return="ignore" />')
+    [void]$sb.AppendLine('    <CustomAction Id="SetBackupRuntimeData" Property="BackupRuntimeData" Value="[INSTALLFOLDER]|[CommonAppDataFolder]PopKillerUpgradeBackup" Execute="immediate" />')
+    [void]$sb.AppendLine('    <CustomAction Id="RestoreRuntimeData" BinaryRef="CleanupCA" DllEntry="RestoreRuntimeData" Execute="immediate" Return="ignore" />')
+    [void]$sb.AppendLine('    <CustomAction Id="SetRestoreRuntimeData" Property="RestoreRuntimeData" Value="[INSTALLFOLDER]|[CommonAppDataFolder]PopKillerUpgradeBackup" Execute="immediate" />')
   }
   [void]$sb.AppendLine('    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />')
   [void]$sb.AppendLine('    <Property Id="DESKTOP_SHORTCUT" Value="1" />')
@@ -155,6 +159,10 @@ try {
   [void]$sb.AppendLine('    </Feature>')
   if ($haveCa) {
     [void]$sb.AppendLine('    <InstallExecuteSequence>')
+    [void]$sb.AppendLine('      <Custom Action="SetBackupRuntimeData" Before="BackupRuntimeData" Condition="WIX_UPGRADE_DETECTED AND NOT REMOVE~=&quot;ALL&quot;" />')
+    [void]$sb.AppendLine('      <Custom Action="BackupRuntimeData" Before="RemoveExistingProducts" Condition="WIX_UPGRADE_DETECTED AND NOT REMOVE~=&quot;ALL&quot;" />')
+    [void]$sb.AppendLine('      <Custom Action="SetRestoreRuntimeData" Before="RestoreRuntimeData" Condition="WIX_UPGRADE_DETECTED AND NOT REMOVE~=&quot;ALL&quot;" />')
+    [void]$sb.AppendLine('      <Custom Action="RestoreRuntimeData" After="RemoveExistingProducts" Condition="WIX_UPGRADE_DETECTED AND NOT REMOVE~=&quot;ALL&quot;" />')
     [void]$sb.AppendLine('      <Custom Action="SetDeleteLeftoversData" Before="DeleteLeftovers" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />')
     [void]$sb.AppendLine('      <Custom Action="DeleteLeftovers" Before="RemoveFiles" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />')
     [void]$sb.AppendLine('    </InstallExecuteSequence>')
