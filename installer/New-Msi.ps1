@@ -155,8 +155,8 @@ try {
   [void]$sb.AppendLine('    </Feature>')
   if ($haveCa) {
     [void]$sb.AppendLine('    <InstallExecuteSequence>')
-    [void]$sb.AppendLine('      <Custom Action="SetDeleteLeftoversData" Before="DeleteLeftovers" Condition="REMOVE~=&quot;ALL&quot;" />')
-    [void]$sb.AppendLine('      <Custom Action="DeleteLeftovers" Before="RemoveFiles" Condition="REMOVE~=&quot;ALL&quot;" />')
+    [void]$sb.AppendLine('      <Custom Action="SetDeleteLeftoversData" Before="DeleteLeftovers" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />')
+    [void]$sb.AppendLine('      <Custom Action="DeleteLeftovers" Before="RemoveFiles" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />')
     [void]$sb.AppendLine('    </InstallExecuteSequence>')
   }
   [void]$sb.AppendLine('  </Package>')

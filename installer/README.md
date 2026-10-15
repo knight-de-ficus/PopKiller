@@ -27,9 +27,9 @@ pwsh -File installer\New-Msi.ps1 -Version 0.9.1 -MsiName PopKiller-Beta0.9.1-x64
 - 中文界面（`Language=2052` + `-culture zh-CN`）：欢迎 / 选择安装目录 / **安装选项（勾选“创建桌面快捷方式”）** / 就绪 / 进度 / 完成。
 - 开始菜单快捷方式固定创建；桌面快捷方式可选。
 - 随包携带 **VC++ 运行时**（app-local）；排除 `pdb/lib/exp` 与运行期文件。
-- 固定 `UpgradeCode` + `MajorUpgrade`：升级时用同 `UpgradeCode` 并提升 `-Version` 即可。
+- **升级**：装更高 `-Version` 的 MSI 即可覆盖升级（同 `UpgradeCode`、`ProductCode` 每次自动生成）；**升级保留运行期数据**；降级被拒绝（`DowngradeErrorMessage`）。
 - **开机自启**：由程序在设置页开关，写当前用户注册表启动项 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\PopKiller`。
-- **卸载清理**（`installer/CleanupCA`）：删除自启注册表值（`HKCU`/`HKLM` 的 `…\Run\PopKiller`），并删除安装目录下的运行期数据（`rules.json`(+`.bak`)、`winui.ini`、`blocklog.txt`、`labels.json`、`crash.log`、`*.dmp`、`*.log`，以及 `StaticML\` 目录）。
+- **卸载清理**（`installer/CleanupCA`）：**仅卸载**（`REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE`）时删除自启注册表值（`HKCU`/`HKLM` 的 `…\Run\PopKiller`）与安装目录下的运行期数据（`rules.json`(+`.bak`)、`winui.ini`、`blocklog.txt`、`labels.json`、`crash.log`、`*.dmp`、`*.log`、`StaticML\`）。**升级时不清理**，用户规则/配置保留。
 
 ## 注意
 - 机器级安装需要管理员：双击或右键“以管理员身份运行”，在 UAC 中确认。
