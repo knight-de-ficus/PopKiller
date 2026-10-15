@@ -381,7 +381,7 @@
   </Target>
     <Target Name="GenerateVersionScript" BeforeTargets="PrepareForBuild">
 		<Exec Command="echo [Version] running GenerateVersion.ps1" />
-		<Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)..\scripts\GenerateVersion.ps1&quot;" />
+		<Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)..\scripts\GenerateVersion.ps1&quot;" />
 	</Target>
   <!--
     自包含 + unpackaged 下 AppNotificationManager.Register() 依赖

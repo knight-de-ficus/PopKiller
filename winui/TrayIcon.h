@@ -167,9 +167,28 @@ namespace TrayIcon
         Visible = false;
     }
 
+    // 首次隐藏到托盘时提示一次（避免用户以为已退出）
+    inline void ShowBalloonOnce()
+    {
+        static bool shown = false;
+        if (shown || !Visible) return;
+        shown = true;
+        NOTIFYICONDATAW nid{};
+        nid.cbSize = sizeof(nid);
+        nid.hWnd = Hwnd;
+        nid.uID = 1;
+        nid.uFlags = NIF_INFO;
+        nid.dwInfoFlags = NIIF_INFO;
+        wcscpy_s(nid.szInfoTitle, L"PopKiller");
+        wcscpy_s(nid.szInfo, L"已在后台运行：双击托盘图标恢复窗口，右键可暂停或退出。");
+        ::Shell_NotifyIconW(NIM_MODIFY, &nid);
+    }
+
     inline void HideToTray()
     {
         Add();
+        // 首次隐藏时提示一次，避免用户以为程序已退出
+        ShowBalloonOnce();
         ::ShowWindow(Hwnd, SW_HIDE);
         if (OnHideToTray) OnHideToTray();
         ::SetProcessWorkingSetSize(::GetCurrentProcess(), (SIZE_T)-1, (SIZE_T)-1);

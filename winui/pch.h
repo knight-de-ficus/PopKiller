@@ -41,3 +41,15 @@ inline std::wstring GetSelfPath()
         cap *= 2;
     }
 }
+
+// 当前进程是否以管理员权限（提升令牌）运行
+inline bool IsProcessElevated()
+{
+    HANDLE tok = nullptr;
+    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &tok)) return false;
+    TOKEN_ELEVATION te{};
+    DWORD n = 0;
+    bool elevated = ::GetTokenInformation(tok, TokenElevation, &te, sizeof(te), &n) && te.TokenIsElevated;
+    ::CloseHandle(tok);
+    return elevated;
+}

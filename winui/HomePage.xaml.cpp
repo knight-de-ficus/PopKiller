@@ -150,6 +150,10 @@ namespace winrt::winui::implementation
             EngineStatusText().Text(L"运行中");
             EnableEngineButton().Visibility(Visibility::Collapsed);
         }
+
+        PrivilegeText().Text(IsProcessElevated()
+            ? L"权限：管理员"
+            : L"权限：普通用户（拦截管理员权限的弹窗需以管理员身份运行）");
     }
 
     void HomePage::EnableEngine_Click(winrt::Windows::Foundation::IInspectable const&,
