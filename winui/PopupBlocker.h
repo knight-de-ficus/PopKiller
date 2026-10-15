@@ -140,6 +140,7 @@ namespace PopupBlocker
     {
         auto idx = std::make_shared<RuleIndex>();
         for (auto const& r : rules) {
+            if (!r.enabled) continue;           // 停用规则不进索引
             if (r.conditions.empty()) continue;
             idx->empty = false;
 

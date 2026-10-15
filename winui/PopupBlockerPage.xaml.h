@@ -49,6 +49,8 @@ namespace winrt::winui::implementation
             winrt::Microsoft::UI::Xaml::Input::RightTappedRoutedEventArgs const& args);
         void RuleItem_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender,
             winrt::Microsoft::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& args);
+        void RuleToggle_Toggled(winrt::Windows::Foundation::IInspectable const& sender,
+            winrt::Microsoft::UI::Xaml::RoutedEventArgs const& args);
 
         void RestoreCommunity_Click(winrt::Windows::Foundation::IInspectable const& sender,
             winrt::Microsoft::UI::Xaml::RoutedEventArgs const& args);
@@ -70,6 +72,7 @@ namespace winrt::winui::implementation
             int listType{ 0 };
             std::vector<ConditionItem> conditions;  // >=1
             bool fromCommunity{ false };
+            bool enabled{ true };
         };
 
         struct ConditionRow {
@@ -111,6 +114,9 @@ namespace winrt::winui::implementation
         std::vector<RuleItem> m_rules;
         std::wstring m_searchText;
         std::vector<size_t> m_visibleIndex;
+
+        // 构建规则行时抑制 ToggleSwitch.Toggled 回调
+        bool m_buildingRows{ false };
 
         size_t m_rightClickRealIndex{ (size_t)-1 };
 

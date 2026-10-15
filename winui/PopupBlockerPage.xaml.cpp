@@ -379,6 +379,7 @@ namespace winrt::winui::implementation
             RuleItem item{};
             item.listType = r.isWhitelist ? 1 : 0;
             item.fromCommunity = r.fromCommunity;
+            item.enabled = r.enabled;
             for (auto const& c : r.conditions) {
                 ConditionItem ci;
                 if (c.mode == PopupBlocker::MatchMode::RandomClass) {
@@ -406,6 +407,7 @@ namespace winrt::winui::implementation
 
     void PopupBlockerPage::RefreshList()
     {
+        m_buildingRows = true;
         RulesList().Items().Clear();
         m_visibleIndex.clear();
 
@@ -419,7 +421,49 @@ namespace winrt::winui::implementation
                     return;
 
                 m_visibleIndex.push_back(i);
-                RulesList().Items().Append(box_value(hstring(display)));
+
+                // 行 = [启用开关][规则文本]；代码构建以便行内控件与右键菜单
+                auto row = Controls::Grid();
+                row.ColumnSpacing(8);
+
+                Controls::ColumnDefinition col0;
+                col0.Width(GridLengthHelper::Auto());
+                Controls::ColumnDefinition col1;
+                col1.Width(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+                row.ColumnDefinitions().Append(col0);
+                row.ColumnDefinitions().Append(col1);
+
+                auto toggle = Controls::ToggleSwitch();
+                toggle.MinWidth(0);
+                toggle.OnContent(box_value(hstring(L"")));
+                toggle.OffContent(box_value(hstring(L"")));
+                toggle.IsOn(r.enabled);
+                toggle.VerticalAlignment(VerticalAlignment::Center);
+                toggle.Tag(box_value(static_cast<int64_t>(i)));
+                toggle.Toggled({ get_weak(), &PopupBlockerPage::RuleToggle_Toggled });
+
+                auto tb = Controls::TextBlock();
+                tb.Text(hstring(display));
+                tb.TextWrapping(TextWrapping::Wrap);
+                tb.VerticalAlignment(VerticalAlignment::Center);
+                if (!r.enabled) tb.Opacity(0.45);
+
+                auto menu = Controls::MenuFlyout();
+                auto miEdit = Controls::MenuFlyoutItem();
+                miEdit.Text(L"编辑");
+                miEdit.Click({ get_weak(), &PopupBlockerPage::EditRule_Click });
+                auto miDel = Controls::MenuFlyoutItem();
+                miDel.Text(L"删除");
+                miDel.Click({ get_weak(), &PopupBlockerPage::DeleteRule_Click });
+                menu.Items().Append(miEdit);
+                menu.Items().Append(miDel);
+                tb.ContextFlyout(menu);
+
+                Controls::Grid::SetColumn(toggle, 0);
+                Controls::Grid::SetColumn(tb, 1);
+                row.Children().Append(toggle);
+                row.Children().Append(tb);
+                RulesList().Items().Append(row);
             };
 
         for (size_t i = 0; i < m_rules.size(); ++i)
@@ -427,7 +471,32 @@ namespace winrt::winui::implementation
         for (size_t i = 0; i < m_rules.size(); ++i)
             if (m_rules[i].fromCommunity) appendItem(i);
 
+        m_buildingRows = false;
         UpdateCommunityRestoreButtonVisibility();
+    }
+
+    // 行内启用/停用开关；停用只改标志、保留规则，引擎索引会跳过停用规则
+    void PopupBlockerPage::RuleToggle_Toggled(IInspectable const& sender, RoutedEventArgs const&)
+    {
+        if (m_buildingRows) return;
+        auto toggle = sender.try_as<Controls::ToggleSwitch>();
+        if (!toggle) return;
+
+        auto tag = toggle.Tag();
+        if (!tag) return;
+        size_t real = static_cast<size_t>(unbox_value<int64_t>(tag));
+        if (real >= m_rules.size()) return;
+
+        bool enable = toggle.IsOn();
+        if (m_rules[real].enabled == enable) return;
+
+        std::wstring key = PopupBlocker::RuleKey(ToEngineRule(m_rules[real]));
+        PopupBlocker::MutateRules([&](std::vector<PopupBlocker::Rule>& rules, std::vector<std::wstring>&) {
+            for (auto& r : rules)
+                if (PopupBlocker::RuleKey(r) == key) { r.enabled = enable; break; }
+        });
+
+        ReloadRulesFromEngine();
     }
 
     void PopupBlockerPage::SelectRuleByRealIndex(size_t real)
@@ -786,31 +855,39 @@ namespace winrt::winui::implementation
         RefreshList();
     }
 
-    void PopupBlockerPage::RuleItem_RightTapped(winrt::Windows::Foundation::IInspectable const& sender,
-        winrt::Microsoft::UI::Xaml::Input::RightTappedRoutedEventArgs const&)
+    // 事件挂在 ListView 上（C++/WinRT 的 RightTapped/DoubleTapped 委托无可用构造函数），
+    // 由 OriginalSource 沿可视树回溯到所在 ListViewItem，再用 IndexFromContainer 取行号。
+    static Controls::ListViewItem FindRuleRowContainer(winrt::Windows::Foundation::IInspectable const& source)
     {
-        m_rightClickRealIndex = kInvalidIndex;
-        if (auto tb = sender.try_as<Controls::TextBlock>())
+        auto cur = source.try_as<DependencyObject>();
+        while (cur)
         {
-            uint32_t uiIdx = 0;
-            if (RulesList().Items().IndexOf(box_value(tb.Text()), uiIdx)
-                && uiIdx < m_visibleIndex.size())
-            {
-                m_rightClickRealIndex = m_visibleIndex[uiIdx];
-                RulesList().SelectedIndex(uiIdx);
-            }
+            if (auto li = cur.try_as<Controls::ListViewItem>()) return li;
+            cur = Media::VisualTreeHelper::GetParent(cur);
         }
+        return nullptr;
     }
 
-    void PopupBlockerPage::RuleItem_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender,
-        winrt::Microsoft::UI::Xaml::Input::DoubleTappedRoutedEventArgs const&)
+    void PopupBlockerPage::RuleItem_RightTapped(winrt::Windows::Foundation::IInspectable const&,
+        winrt::Microsoft::UI::Xaml::Input::RightTappedRoutedEventArgs const& args)
     {
-        if (auto tb = sender.try_as<Controls::TextBlock>())
-        {
-            uint32_t uiIdx = 0;
-            if (RulesList().Items().IndexOf(box_value(tb.Text()), uiIdx) && uiIdx < m_visibleIndex.size())
-                OpenEditDialog(m_visibleIndex[uiIdx]);
-        }
+        m_rightClickRealIndex = kInvalidIndex;
+        auto container = FindRuleRowContainer(args.OriginalSource());
+        if (!container) return;
+        int idx = RulesList().IndexFromContainer(container);
+        if (idx < 0 || idx >= static_cast<int>(m_visibleIndex.size())) return;
+        m_rightClickRealIndex = m_visibleIndex[static_cast<size_t>(idx)];
+        RulesList().SelectedIndex(idx);
+    }
+
+    void PopupBlockerPage::RuleItem_DoubleTapped(winrt::Windows::Foundation::IInspectable const&,
+        winrt::Microsoft::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& args)
+    {
+        auto container = FindRuleRowContainer(args.OriginalSource());
+        if (!container) return;
+        int idx = RulesList().IndexFromContainer(container);
+        if (idx < 0 || idx >= static_cast<int>(m_visibleIndex.size())) return;
+        OpenEditDialog(m_visibleIndex[static_cast<size_t>(idx)]);
     }
 
     // “编辑规则”对话框改为代码创建（EntireControlInPopup + 显式 Style），恢复首次弹出入场动画

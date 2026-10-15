@@ -170,6 +170,8 @@ namespace PopupBlocker
                 Rule r;
                 r.isWhitelist = item.value("list", "B") == "W";
                 r.fromCommunity = item.value("source", "") == "community";
+                // 旧文件无此字段 → 默认启用
+                r.enabled = item.value("enabled", true);
 
                 if (item.contains("conditions") && item["conditions"].is_array()) {
                     for (auto& cj : item["conditions"]) {
@@ -221,6 +223,8 @@ namespace PopupBlocker
         for (auto const& r : rules) {
             nlohmann::json item;
             item["list"] = r.isWhitelist ? "W" : "B";
+            // 仅在停用时写出，保持启用规则的文件格式不变
+            if (!r.enabled) item["enabled"] = false;
 
             if (r.conditions.size() <= 1) {
                 // 单条件写平铺字段（保持旧格式可读）；空条件按默认 exe/contains 占位

@@ -130,22 +130,14 @@
                                  PlaceholderText="搜索规则"
                                  TextChanged="SearchInput_TextChanged"/>
 
-                        <ListView x:Name="RulesList" Height="260" SelectionMode="Single">
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding}" 
-                                               HorizontalAlignment="Stretch"
-                                               RightTapped="RuleItem_RightTapped"
-                                               DoubleTapped="RuleItem_DoubleTapped">
-                                        <TextBlock.ContextFlyout>
-                                            <MenuFlyout>
-                                                <MenuFlyoutItem Text="编辑" Icon="Edit" Click="EditRule_Click"/>
-                                                <MenuFlyoutItem Text="删除" Icon="Delete" Click="DeleteRule_Click"/>
-                                            </MenuFlyout>
-                                        </TextBlock.ContextFlyout>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
+                        <ListView x:Name="RulesList" Height="260" SelectionMode="Single"
+                                  RightTapped="RuleItem_RightTapped"
+                                  DoubleTapped="RuleItem_DoubleTapped">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
                         </ListView>
                     </StackPanel>
                 </Border>

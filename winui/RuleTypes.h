@@ -23,6 +23,8 @@ namespace PopupBlocker
         bool isWhitelist = false;
         std::vector<RuleCondition> conditions;
         bool fromCommunity = false;
+        // 停用的规则仍保留在列表中，但不参与匹配
+        bool enabled = true;
     };
 
     inline wchar_t const* FieldName(RuleField f)

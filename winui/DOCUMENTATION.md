@@ -17,12 +17,12 @@
 | `RuleKey(r)` | 规则 | `std::wstring` | 规则唯一键；单条件与旧格式一致，多条件按各条件 key 排序后拼接（顺序无关） |
 
 全局类型：
-- `Rule{ isWhitelist, conditions, fromCommunity }`；`conditions` 为 `std::vector<RuleCondition>`（**全部满足才命中，AND**；单条件即 size=1；UI 上限 4 个条件）
+- `Rule{ isWhitelist, conditions, fromCommunity, enabled }`；`conditions` 为 `std::vector<RuleCondition>`（**全部满足才命中，AND**；单条件即 size=1；UI 上限 4 个条件）；`enabled=false` 的规则保留在列表中但**不参与匹配**（`BuildRuleIndex` 跳过）
 - `RuleCondition{ field, mode, pattern }`
 - `RuleField`: `Exe`, `Path`, `Title`, `Class`
 - `MatchMode`: `Contains`, `Exact`, `Wildcard`, `RandomClass`（类名随机，忽略 pattern）
 - 行格式支持多条件：`B:exe:exact:foo+title:contains:广告`；类名随机写作 `class:random`
-- JSON：单条件写平铺 `field/mode/pattern`；多条件写 `conditions:[{field,mode,pattern}]`
+- JSON：单条件写平铺 `field/mode/pattern`；多条件写 `conditions:[{field,mode,pattern}]`；停用规则额外写 `enabled:false`（缺省视为启用，兼容旧文件）
 
 ## RuleStorage.h（规则 JSON 存储）
 
@@ -329,7 +329,7 @@ MutateRules([&](std::vector<Rule>& rules, std::vector<std::wstring>&) {
 | 函数 | 输入 | 输出 | 说明/副作用 |
 |---|---|---|---|
 | `ReloadRulesFromEngine()` | 无 | `void` | 从引擎重新加载规则到本地缓存 |
-| `RefreshList()` | 无 | `void` | 按 `m_searchText` 重建列表，更新 `m_visibleIndex` 映射 |
+| `RefreshList()` | 无 | `void` | 按 `m_searchText` 重建列表（代码生成行：行首启用开关 + 规则文本），更新 `m_visibleIndex` 映射 |
 | `Save()` | 无 | `void` | 四段式写回 ini，清理多余 `RuleN` |
 | `EnableToggle_Toggled(sender, args)` | 开关 | `void` | 写 `Enabled`，开则 `StartEngine()`、关则 `Stop()` |
 | `CommunityRulesToggle_Toggled(sender, args)` | 开关 | `void` | 写社区规则开关，触发拉取 |
@@ -341,6 +341,7 @@ MutateRules([&](std::vector<Rule>& rules, std::vector<std::wstring>&) {
 | `SelectRuleByRealIndex(real)` | 真实索引 | `void` | 选中并滚动到该规则（必要时清空搜索以显示） |
 | `PromptConflictEdit(real)` | 真实索引 | `IAsyncAction` | 弹「规则冲突」确认框；确认后重置添加栏并打开冲突规则的编辑框 |
 | `DeleteRule_Click(sender, args)` | 按钮 | `void` | 经 `m_visibleIndex` 映射删除 |
+| `RuleToggle_Toggled(sender, args)` | 行内开关 | `void` | 按 `Tag` 定位真实规则并翻转 `enabled`（`MutateRules` 持久化 + 重建索引），停用不删除 |
 | `Pick_Click(sender, args)` | 按钮 | `void` | 启动拾取器，回填输入框与 PickInfo |
 | `SearchInput_TextChanged(sender, args)` | 文本 | `void` | 更新 `m_searchText`→RefreshList |
 | `OpenIO_Click(sender, args)` | 按钮 | `void` | 导航到规则导入导出页 |
