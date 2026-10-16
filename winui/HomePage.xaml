@@ -3,20 +3,26 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <ScrollViewer>
+    <ScrollViewer Padding="24,0">
         <StackPanel x:Name="RootPanel" Background="Transparent"
-                    Padding="16,12"
+                    Padding="0,24,0,0"
                     PointerMoved="RootPointerMoved"
                     PointerExited="RootPointerExited">
 
-            <TextBlock Text="主页" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,8"/>
+            <StackPanel Spacing="2">
+                <TextBlock Text="主页" Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock Text="查看拦截引擎状态，快速进入弹窗拦截与设置。"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
 
-            <StackPanel HorizontalAlignment="Left" MaxWidth="800" Spacing="8">
+            <StackPanel Margin="0,16,0,0" MaxWidth="800" HorizontalAlignment="Left" Spacing="16">
 
                 <Border x:Name="EngineCard"
-                        Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
+                        BorderThickness="1" CornerRadius="8">
                     <Grid>
                         <Canvas x:Name="EngineCanvas" Opacity="0" IsHitTestVisible="False">
                             <Ellipse x:Name="EngineGlow" Width="300" Height="300">
@@ -28,15 +34,15 @@
                                 </Ellipse.Fill>
                             </Ellipse>
                         </Canvas>
-                        <Border Margin="2" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"/>
-                        <Grid Padding="16" ColumnDefinitions="*,Auto">
+                        <Border Margin="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+                        <Grid Padding="16,12" ColumnDefinitions="*,Auto">
                             <StackPanel VerticalAlignment="Center" Spacing="2">
-                                <TextBlock Text="拦截引擎" FontSize="15" FontWeight="SemiBold"/>
+                                <TextBlock Text="拦截引擎" Style="{StaticResource BodyStrongTextBlockStyle}"/>
                                 <TextBlock x:Name="EngineStatusText" Text="检测中..."
-                                           FontSize="12"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                 <TextBlock x:Name="PrivilegeText" Text=""
-                                           FontSize="12" TextWrapping="Wrap"
+                                           Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                             <Button x:Name="EnableEngineButton" Grid.Column="1" Content="开启拦截"
@@ -47,16 +53,16 @@
                     </Grid>
                 </Border>
 
-                <Grid ColumnSpacing="8">
+                <Grid ColumnSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <Border x:Name="GlowCard2" Grid.Column="0"
-                            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
+                            BorderThickness="1" CornerRadius="8"
                             Tapped="GoToBlocker_Tapped">
                         <Grid>
                             <Canvas x:Name="GlowCanvas2" Opacity="0" IsHitTestVisible="False">
@@ -69,28 +75,29 @@
                                     </Ellipse.Fill>
                                 </Ellipse>
                             </Canvas>
-                            <Border Margin="2" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"/>
-                            <Grid Padding="16">
+                            <Border Margin="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+                            <Grid Padding="16,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <FontIcon Glyph="&#xEA18;" FontSize="28" Margin="0,0,16,0" VerticalAlignment="Center" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                <FontIcon Glyph="&#xEA18;" FontSize="32" Margin="0,0,16,0" VerticalAlignment="Center" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="弹窗拦截" FontSize="15" FontWeight="SemiBold"/>
+                                    <TextBlock Text="弹窗拦截" Style="{StaticResource BodyStrongTextBlockStyle}"/>
                                     <TextBlock Text="配置拦截规则 自动关闭广告与干扰弹窗"
-                                               FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
                     </Border>
 
                     <Border x:Name="GlowCard3" Grid.Column="1"
-                            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
+                            BorderThickness="1" CornerRadius="8"
                             Tapped="GoToSettings_Tapped">
                         <Grid>
                             <Canvas x:Name="GlowCanvas3" Opacity="0" IsHitTestVisible="False">
@@ -103,19 +110,20 @@
                                     </Ellipse.Fill>
                                 </Ellipse>
                             </Canvas>
-                            <Border Margin="2" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"/>
-                            <Grid Padding="16">
+                            <Border Margin="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+                            <Grid Padding="16,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <FontIcon Glyph="&#xE713;" FontSize="28" Margin="0,0,16,0" VerticalAlignment="Center" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                <FontIcon Glyph="&#xE713;" FontSize="32" Margin="0,0,16,0" VerticalAlignment="Center" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="应用设置" FontSize="15" FontWeight="SemiBold"/>
+                                    <TextBlock Text="应用设置" Style="{StaticResource BodyStrongTextBlockStyle}"/>
                                     <TextBlock Text="管理静态 ML 启发、拦截阈值、开机自启与外观主题"
-                                               FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
@@ -123,9 +131,9 @@
                 </Grid>
 
                 <Border x:Name="GlowCard"
-                        Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
+                        BorderThickness="1" CornerRadius="8">
                     <Grid>
                         <Canvas x:Name="GlowCanvas" Opacity="0" IsHitTestVisible="False">
                             <Ellipse x:Name="GlowLayer" Width="300" Height="300">
@@ -137,13 +145,13 @@
                                 </Ellipse.Fill>
                             </Ellipse>
                         </Canvas>
-                        <Border Margin="2" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"/>
-                        <StackPanel Spacing="0" Padding="16">
-                            <TextBlock Text="Microsoft Windows" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                            <TextBlock x:Name="VersionLineText" FontSize="13" Margin="0,0,0,4"/>
-                            <TextBlock x:Name="EditionText" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,20"/>
-                            <TextBlock x:Name="OwnerText" FontSize="13" Margin="20,0,0,4"/>
-                            <TextBlock x:Name="OrgText" FontSize="13" Margin="20,0,0,0"/>
+                        <Border Margin="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+                        <StackPanel Spacing="0" Padding="16,12">
+                            <TextBlock Text="Microsoft Windows" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8"/>
+                            <TextBlock x:Name="VersionLineText" Style="{StaticResource BodyTextBlockStyle}" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="EditionText" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                            <TextBlock x:Name="OwnerText" Style="{StaticResource BodyTextBlockStyle}" Margin="20,0,0,4"/>
+                            <TextBlock x:Name="OrgText" Style="{StaticResource BodyTextBlockStyle}" Margin="20,0,0,0"/>
                         </StackPanel>
                     </Grid>
                 </Border>
