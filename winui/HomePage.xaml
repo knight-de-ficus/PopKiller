@@ -35,7 +35,7 @@
                             </Ellipse>
                         </Canvas>
                         <Border Margin="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
-                        <Grid Padding="16,12" ColumnDefinitions="*,Auto">
+                        <Grid Padding="12,8" ColumnDefinitions="*,Auto">
                             <StackPanel VerticalAlignment="Center" Spacing="2">
                                 <TextBlock Text="拦截引擎" Style="{StaticResource BodyStrongTextBlockStyle}"/>
                                 <TextBlock x:Name="EngineStatusText" Text="检测中..."
@@ -76,7 +76,7 @@
                                 </Ellipse>
                             </Canvas>
                             <Border Margin="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
-                            <Grid Padding="16,12">
+                            <Grid Padding="12,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
@@ -111,7 +111,7 @@
                                 </Ellipse>
                             </Canvas>
                             <Border Margin="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
-                            <Grid Padding="16,12">
+                            <Grid Padding="12,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
@@ -146,7 +146,7 @@
                             </Ellipse>
                         </Canvas>
                         <Border Margin="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
-                        <StackPanel Spacing="0" Padding="16,12">
+                        <StackPanel Spacing="0" Padding="12,8">
                             <TextBlock Text="Microsoft Windows" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8"/>
                             <TextBlock x:Name="VersionLineText" Style="{StaticResource BodyTextBlockStyle}" Margin="0,0,0,4"/>
                             <TextBlock x:Name="EditionText" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,0,0,16"/>

@@ -19,7 +19,7 @@
 
                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1" CornerRadius="8" Padding="16,12">
+                        BorderThickness="1" CornerRadius="8" Padding="12,8">
                     <StackPanel Spacing="16">
                         <TextBlock Text="通用" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
@@ -71,7 +71,7 @@
 
                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1" CornerRadius="8" Padding="16,12">
+                        BorderThickness="1" CornerRadius="8" Padding="12,8">
                     <StackPanel Spacing="16">
                         <TextBlock Text="拦截设置" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
@@ -158,7 +158,7 @@
 
                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1" CornerRadius="8" Padding="16,12">
+                        BorderThickness="1" CornerRadius="8" Padding="12,8">
                     <StackPanel Spacing="12">
                         <TextBlock Text="关于" Style="{StaticResource SubtitleTextBlockStyle}"/>
 

@@ -22,7 +22,7 @@
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
-                            Padding="16,12">
+                            Padding="12,8">
                         <StackPanel Spacing="16">
 
                             <Grid ColumnDefinitions="*,Auto">
@@ -49,7 +49,7 @@
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
-                            Padding="16,12">
+                            Padding="12,8">
                         <StackPanel Spacing="8">
                             <TextBlock Text="社区规则库"
                                        Style="{StaticResource SubtitleTextBlockStyle}"/>
@@ -83,7 +83,7 @@
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
-                            Padding="16,12">
+                            Padding="12,8">
                         <StackPanel Spacing="12">
                             <TextBlock Text="添加规则"
                                        Style="{StaticResource SubtitleTextBlockStyle}"/>
@@ -114,7 +114,7 @@
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
-                            Padding="16,12">
+                            Padding="12,8">
                         <StackPanel Spacing="12">
 
                             <Grid>
