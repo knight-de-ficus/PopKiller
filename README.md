@@ -56,7 +56,7 @@
 | **系统托盘** | 最小化到托盘，右键菜单快速切换拦截状态、跳转页面 |
 | **关闭行为** | 关闭窗口时选择：每次询问 / 完全退出 / 最小化到托盘 |
 | **日志系统** | 卡片式「历史记录」界面：每条日志显示状态图标、动作、时间、进程与判定依据，展开可查看提示条、详细信息与事件记录；支持搜索、筛选、标注与详细日志模式 |
-| **安装包** | 提供机器级中文 MSI：默认安装到 `C:\PopKiller`，覆盖升级自动保留规则/配置/模型，卸载清理自启项与运行期数据 |
+| **安装包** | 提供机器级中文安装包（Inno Setup）：默认安装到 `C:\PopKiller`，覆盖升级自动保留规则/配置/模型，卸载清理自启项与运行期数据 |
 
 ---
 
@@ -72,10 +72,10 @@
 
 两种方式任选：
 
-1. **MSI 安装包（推荐）**：从 [Releases](https://github.com/lmg325586/PopKiller/releases) 下载 `PopKiller-Beta<x.y.z>-x64.msi`，双击安装。
+1. **安装包（推荐）**：从 [Releases](https://github.com/lmg325586/PopKiller/releases) 下载 `PopKiller-Beta<x.y.z>-x64-setup.exe`，双击安装。
    - 机器级安装（需管理员权限），中文界面，默认目录 `C:\PopKiller`；
-   - 安装后自动创建桌面快捷方式（可选）与开始菜单项，可勾选开机自启；
-   - **覆盖升级**：直接安装更高版本即可，规则、配置与 `StaticML` 模型会自动备份并恢复；
+   - 安装时可勾选「创建桌面快捷方式」与「开机自动启动」；
+   - **覆盖升级**：直接安装更高版本即可，规则、配置与 `StaticML` 模型原样保留；
    - **卸载**：清理开机自启项与运行期文件（`rules.json`、`winui.ini`、`StaticML\`、日志等）。
 2. **便携包**：下载 `.7z` 解压后运行 `winui.exe`，无需安装。
 
@@ -425,8 +425,8 @@ cd PopKiller
 4. 预构建事件会自动运行 `scripts/GenerateVersion.ps1`，根据 git 提交哈希与日期生成 `VersionInfo.h`；
 5. 输出目录下的 `winui.exe` 即为可执行文件；
 6. 确保 `StaticML\` 目录下的两个 `.onnx` 模型文件与 `winui.exe` 在同一目录层级；
-7. （可选）生成 MSI 安装包：先安装 WiX v5（`dotnet tool install --global wix --version 5.0.2`），再执行
-   `pwsh -File installer\New-Msi.ps1 -Version x.y.z -MsiName PopKiller-Betax.y.z-x64.msi`，产物输出到 `dist\`。
+7. （可选）生成安装包：安装 [Inno Setup 6.5+](https://jrsoftware.org/isdl.php)（中文语言文件已随仓库提供），再执行
+   `pwsh -File installer\New-Setup.ps1 -Version x.y.z`，产物输出到 `dist\`。
 
 > 说明：本项目为**自包含（self-contained）**部署，Release 包内已含 Windows App SDK 运行时，**目标机无需单独安装**；建议目标机具备 VC++ 2015–2022 x64 运行库。
 > 构建时 `winui.vcxproj` 会从本机已安装的 WinAppSDK 框架包复制 `Microsoft.WindowsAppRuntime.Insights.Resource.dll` 到输出目录（`AppNotificationManager.Register()` 需要该文件，见 WindowsAppSDK #6774）；请确保**构建机**已安装对应的 WinAppSDK Runtime。
@@ -457,10 +457,12 @@ PopKiller/
 │   └── cache/                     # 样本缓存与去重
 │       ├── dedup.py               # 样本去重脚本
 │       └── start.bat
-├── installer/                     # MSI 打包
-│   ├── New-Msi.ps1                # 生成机器级中文 MSI（WiX v5）
-│   ├── README.md                  # 打包与安装/升级/卸载行为说明
-│   └── CleanupCA/                 # 卸载清理 + 升级数据备份/恢复 CustomAction DLL
+├── installer/                     # 安装包（Inno Setup）
+│   ├── PopKiller.iss              # Inno Setup 脚本（机器级 / 中文界面 / 升级保留数据）
+│   ├── New-Setup.ps1              # 生成安装包（暂存文件 + 补 VC++ 运行时 + 调 ISCC）
+│   ├── lang/ChineseSimplified.isl # 简体中文语言文件
+│   ├── New-Msi.ps1                # 旧 WiX MSI 脚本（已弃用，保留参考）
+│   └── CleanupCA/                 # 旧 MSI 的卸载清理 CustomAction（已弃用）
 └── winui/                         # 主项目
     ├── App.xaml(.cpp/.h)          # 应用入口（含单实例逻辑）
     ├── MainWindow.xaml(.cpp/.h)   # 主窗口（导航框架、托盘、最小尺寸、关闭行为）
@@ -523,7 +525,7 @@ PopKiller/
 - [x] 规则逐条启用/停用开关
 - [x] 卡片式日志页（展开详情 + 事件记录）
 - [x] 焦点窃取分支的基础设施窗口硬过滤（拖影/提示/IME/系统遮罩）
-- [x] 机器级中文 MSI（覆盖升级保留规则/配置/模型）
+- [x] 机器级中文安装包（Inno Setup，覆盖升级保留规则/配置/模型）
 - [x] 界面规范对齐（卡片底色/圆角/间距与 WinUI 3 一致）
 - [ ] 等你来提出
 
