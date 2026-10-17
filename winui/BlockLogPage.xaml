@@ -3,62 +3,80 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <Page.Resources>
+        <!-- 日志卡片配色（跟随主题） -->
+        <SolidColorBrush x:Key="LogCardBgBrush" Color="{ThemeResource CardBackgroundFillColorDefault}"/>
+        <SolidColorBrush x:Key="LogCardStrokeBrush" Color="{ThemeResource CardStrokeColorDefault}"/>
+        <SolidColorBrush x:Key="LogSubFgBrush" Color="{ThemeResource TextFillColorSecondary}"/>
+    </Page.Resources>
+
     <Grid Padding="24,0" RowDefinitions="Auto,Auto,*">
 
-        <StackPanel Grid.Row="0" Padding="0,24,0,0" Spacing="2">
-            <TextBlock Text="拦截日志" Style="{StaticResource TitleTextBlockStyle}"/>
-            <TextBlock Text="实时查看拦截 / 放行 / 监控记录；可筛选、搜索，并对样本进行标注。"
+        <!-- 页头：标题 + 筛选器 -->
+        <Grid Grid.Row="0" Padding="0,24,0,0" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="2">
+                <TextBlock Text="拦截日志" Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock Text="实时查看拦截 / 放行 / 监控记录；可筛选、搜索，并对样本进行标注。"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+            <ComboBox x:Name="FilterCombo" Grid.Column="1" MinWidth="160" VerticalAlignment="Top"
+                      PlaceholderText="筛选器" SelectionChanged="Filter_Changed">
+                <ComboBoxItem Content="全部日志" Tag="all"/>
+                <ComboBoxItem Content="仅拦截" Tag="action_block"/>
+                <ComboBoxItem Content="仅放行" Tag="action_allow"/>
+                <ComboBoxItem Content="仅监控" Tag="action_monitor"/>
+                <ComboBoxItem Content="命中黑/白名单" Tag="list"/>
+                <ComboBoxItem Content="ML与启发冲突" Tag="ml_heur"/>
+                <ComboBoxItem Content="ML与名单冲突" Tag="ml_list"/>
+            </ComboBox>
+        </Grid>
+
+        <!-- 工具条：搜索 / 计数 / 操作 -->
+        <Grid Grid.Row="1" Margin="0,16,0,0" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="SearchBox"
+                     PlaceholderText="搜索 (exe / 标题 / 类名)"
+                     TextChanged="Search_Changed"/>
+            <TextBlock Grid.Column="1" x:Name="FilterCountText"
+                       VerticalAlignment="Center" Margin="4,0"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       TextWrapping="Wrap"/>
-        </StackPanel>
-
-        <Border Grid.Row="1" Margin="0,16,0,0"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1" CornerRadius="8" Padding="12,8">
-            <StackPanel Spacing="12">
-
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="刷新" Click="Refresh_Click" Padding="12,4"/>
-                    <Button Content="清空" Click="Clear_Click" Padding="12,4"/>
-                    <Button Content="导出训练数据" Click="ExportSamples_Click" Padding="12,4"/>
-                </StackPanel>
-
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                    <ComboBox x:Name="FilterCombo" SelectionChanged="Filter_Changed"
-                              MinWidth="160" SelectedIndex="0">
-                        <ComboBoxItem Content="全部日志" Tag="all"/>
-                        <ComboBoxItem Content="仅拦截" Tag="action_block"/>
-                        <ComboBoxItem Content="仅放行" Tag="action_allow"/>
-                        <ComboBoxItem Content="仅监控" Tag="action_monitor"/>
-                        <ComboBoxItem Content="命中黑/白名单" Tag="list"/>
-                        <ComboBoxItem Content="ML与启发冲突" Tag="ml_heur"/>
-                        <ComboBoxItem Content="ML与名单冲突" Tag="ml_list"/>
-                    </ComboBox>
-                    <TextBox Grid.Column="1" x:Name="SearchBox"
-                             PlaceholderText="搜索 (exe / 标题 / 类名)"
-                             TextChanged="Search_Changed"/>
-                    <TextBlock Grid.Column="2" x:Name="FilterCountText"
-                               VerticalAlignment="Center" FontSize="12"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="0 / 0 条"/>
-                </Grid>
+                       Text="0 / 0 条"/>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                <Button Content="刷新" Click="Refresh_Click" Padding="12,4"/>
+                <Button Content="清空" Click="Clear_Click" Padding="12,4"/>
+                <Button Content="导出训练数据" Click="ExportSamples_Click" Padding="12,4"/>
             </StackPanel>
-        </Border>
+        </Grid>
 
-        <Border Grid.Row="2" Margin="0,16,0,24"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1" CornerRadius="8">
-            <Grid>
-                <ListView x:Name="LogList" SelectionMode="None" Loaded="OnLogListLoaded"/>
+        <!-- 列表：每条日志一张卡片 -->
+        <Grid Grid.Row="2" Margin="0,12,0,24">
+            <ListView x:Name="LogList" SelectionMode="None" Loaded="OnLogListLoaded">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="MinHeight" Value="0"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
 
-                <Button x:Name="NewLogJumpButton" Content="↑ 有新日志"
-                        HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0"
-                        Visibility="Collapsed" Click="NewLogJumpButton_Click"
-                        Style="{ThemeResource AccentButtonStyle}"/>
-            </Grid>
-        </Border>
+            <Button x:Name="NewLogJumpButton" Content="↑ 有新日志"
+                    HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0"
+                    Visibility="Collapsed" Click="NewLogJumpButton_Click"
+                    Style="{ThemeResource AccentButtonStyle}"/>
+        </Grid>
     </Grid>
 </Page>

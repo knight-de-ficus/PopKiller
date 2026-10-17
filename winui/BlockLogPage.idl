@@ -15,5 +15,6 @@ namespace winui
         void Search_Changed(Object sender, Microsoft.UI.Xaml.Controls.TextChangedEventArgs args);
         void OnLogListLoaded(Object sender, Microsoft.UI.Xaml.RoutedEventArgs args);
         void NewLogJumpButton_Click(Object sender, Microsoft.UI.Xaml.RoutedEventArgs args);
+        void OpenRules_Click(Object sender, Microsoft.UI.Xaml.RoutedEventArgs args);
     }
 }

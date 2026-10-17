@@ -3,7 +3,10 @@
 #include "BlockLogPage.xaml.h"
 #include "PopupBlocker.h"
 #include "FilePicker.h"
+#include "App.xaml.h"
+#include "MainWindow.xaml.h"
 #include <sstream>
+#include <winrt/Windows.UI.Text.h>
 #include <vector>
 #include <algorithm>
 #include <functional>
@@ -267,7 +270,7 @@ namespace winrt::winui::implementation
         }
 
         std::wstring timeStr = raw.substr(0, 19);
-        g.lastTime = timeStr.size() >= 19 ? timeStr.substr(11, 8) : L"??:??:??";
+        g.lastTime = (timeStr.size() >= 19) ? timeStr : L"—";
         if (g.firstTime.empty()) g.firstTime = g.lastTime;
 
         return g.action + L"|" + g.reason + L"|" + g.exe + L"|" + g.title;
@@ -416,119 +419,183 @@ namespace winrt::winui::implementation
         return wrap;
     }
 
+    Media::SolidColorBrush BlockLogPage::ResBrush(wchar_t const* key)
+    {
+        return Resources().Lookup(box_value(hstring(key))).as<Media::SolidColorBrush>();
+    }
+
+    std::wstring BlockLogPage::ActionSentence(std::wstring const& action) const
+    {
+        if (action == L"block") return L"已拦截弹窗";
+        if (action == L"allow") return L"已放行";
+        return L"已监控（未处理）";
+    }
+
+    std::wstring BlockLogPage::ReasonLabel(std::wstring const& reason) const
+    {
+        if (reason == L"whitelist") return L"白名单";
+        if (reason == L"blacklist") return L"黑名单";
+        if (reason == L"focus_steal") return L"焦点窃取";
+        if (reason == L"heuristic_off") return L"启发式已关闭";
+        if (reason.rfind(L"heuristic", 0) == 0) return L"启发式";
+        return reason;
+    }
+
+    std::wstring BlockLogPage::CalloutText(LogGroup const& g) const
+    {
+        if (g.action == L"allow" || g.reason == L"whitelist") return L"命中白名单规则，已放行该窗口。";
+        if (g.reason == L"focus_steal") return L"检测到焦点窃取，已阻止该窗口抢占前台。";
+        if (g.reason.rfind(L"heuristic", 0) == 0) return L"启发式判定为弹窗，已关闭该窗口。";
+        if (g.reason == L"blacklist") return L"命中黑名单规则，已关闭该窗口。";
+        return L"已记录该窗口的评估结果。";
+    }
+
+    std::wstring BlockLogPage::HintText(LogGroup const& g) const
+    {
+        if (g.action == L"allow") return L"白名单优先于黑名单；如需拦截该窗口，请先移除对应的白名单规则。";
+        if (g.action == L"block") return L"若该窗口不应被关闭，可在卡片上右键将它加入白名单。";
+        return L"当前仅记录、未做处理；开启「启发式拦截」后超阈值的窗口会被自动关闭。";
+    }
+
+    Controls::Grid BlockLogPage::BuildDetailRow(std::wstring const& label, std::wstring const& value)
+    {
+        auto grid = Controls::Grid();
+        grid.ColumnSpacing(12);
+
+        auto c0 = Controls::ColumnDefinition();
+        c0.Width(GridLengthHelper::FromValueAndType(96, GridUnitType::Pixel));
+        auto c1 = Controls::ColumnDefinition();
+        c1.Width(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+        grid.ColumnDefinitions().Append(c0);
+        grid.ColumnDefinitions().Append(c1);
+
+        auto lb = Controls::TextBlock();
+        lb.FontSize(14);
+        lb.Foreground(ResBrush(L"LogSubFgBrush"));
+        lb.Text(label);
+
+        auto vl = Controls::TextBlock();
+        vl.FontSize(14);
+        vl.TextWrapping(TextWrapping::Wrap);
+        vl.IsTextSelectionEnabled(true);
+        vl.Text(value);
+        Controls::Grid::SetColumn(vl, 1);
+
+        grid.Children().Append(lb);
+        grid.Children().Append(vl);
+        return grid;
+    }
+
     void BlockLogPage::UpdateRowUi(RowUi& ui, LogGroup const& g)
     {
-        ui.actionText.Text((g.action == L"block") ? L"拦截" : (g.action == L"allow") ? L"放行" : L"监控");
-        ui.chip.Background((g.action == L"block") ? BrushBad()
-            : (g.action == L"allow") ? BrushOk() : MakeBrush(0x61, 0x61, 0x61));
+        bool block = (g.action == L"block");
+        bool allow = (g.action == L"allow");
+        ui.actionIcon.Glyph(block ? L"\xE72E" : allow ? L"\xE73E" : L"\xE7B3");
+        ui.actionIcon.Foreground(block ? BrushBad() : allow ? BrushOk() : BrushDim());
 
-        bool many = g.count > 1;
-        // 箭头始终可见，允许展开查看单次拦截的详细特征/ML 结果
-        ui.chevronBtn.Visibility(Visibility::Visible);
-        ui.badgeBox.Visibility(many ? Visibility::Visible : Visibility::Collapsed);
-        if (many) ui.badgeText.Text(std::to_wstring(g.count));
-        ui.rot.Angle(g.expanded ? 90 : 0);
-        ui.subPanel.Visibility(g.expanded ? Visibility::Visible : Visibility::Collapsed);
+        ui.titleText.Text(ActionSentence(g.action));
 
-        ui.timeText.Text(many ? (g.firstTime + L"~" + g.lastTime) : g.lastTime);
-        ui.reasonText.Text(FormatLogLineChinese(L"reason=" + g.reason));
-        ui.exeText.Text(g.exe);
-        ui.titleText.Text(g.title);
+        std::wstring sub = g.lastTime;
+        if (!g.exe.empty()) sub += L" · " + g.exe;
+        if (g.count > 1) sub += L" · 共 " + std::to_wstring(g.count) + L" 次";
+        ui.subText.Text(sub);
+
+        ui.tagText.Text(ReasonLabel(g.reason));
         SetLabelIcon(ui.labelIcon, g.lastRaw);
+
+        ui.rot.Angle(g.expanded ? 180 : 0);
+        ui.subPanel.Visibility(g.expanded ? Visibility::Visible : Visibility::Collapsed);
+        if (!g.expanded) return;
+
+        ui.callout.Message(hstring(CalloutText(g)));
+
+        ui.detailPanel.Children().Clear();
+        auto title = Controls::TextBlock();
+        title.FontSize(14);
+        title.FontWeight(winrt::Windows::UI::Text::FontWeights::SemiBold());
+        title.Text(L"详细信息：");
+        ui.detailPanel.Children().Append(title);
+
+        if (!g.exe.empty())   ui.detailPanel.Children().Append(BuildDetailRow(L"进程", g.exe));
+        if (!g.title.empty()) ui.detailPanel.Children().Append(BuildDetailRow(L"窗口标题", g.title));
+        if (!g.cls.empty())   ui.detailPanel.Children().Append(BuildDetailRow(L"窗口类名", g.cls));
+        ui.detailPanel.Children().Append(BuildDetailRow(L"判定依据", ReasonLabel(g.reason)));
+        if (g.score > 0) ui.detailPanel.Children().Append(BuildDetailRow(L"启发式分数", std::to_wstring(g.score)));
+        if (g.reason.rfind(L"heuristic", 0) == 0)
+            ui.detailPanel.Children().Append(BuildDetailRow(L"ML 判定", g.mlY ? L"是（弹窗）" : L"否"));
+        if (g.count > 1)
+            ui.detailPanel.Children().Append(BuildDetailRow(L"时间范围", g.firstTime + L" ~ " + g.lastTime));
+
+        ui.hintText.Text(HintText(g));
     }
 
     RowUi BlockLogPage::BuildRow(size_t gidx)
     {
         RowUi ui;
         ui.root = Controls::Border();
+        ui.root.Background(ResBrush(L"LogCardBgBrush"));
+        ui.root.BorderBrush(ResBrush(L"LogCardStrokeBrush"));
+        ui.root.BorderThickness(ThicknessHelper::FromUniformLength(1));
+        ui.root.CornerRadius(CornerRadiusHelper::FromUniformRadius(4));
+        ui.root.Padding(ThicknessHelper::FromLengths(12, 8, 12, 8));
+        ui.root.Margin(ThicknessHelper::FromLengths(0, 0, 0, 8));
         ui.root.Tag(box_value(static_cast<uint64_t>(gidx)));
-        ui.root.BorderThickness(ThicknessHelper::FromLengths(0, 2, 0, 0));
-        ui.root.BorderBrush(BrushLineStrong());
-        ui.root.Background(Media::SolidColorBrush(winrt::Windows::UI::Color{ 0x00, 0x00, 0x00, 0x00 }));
+        ui.root.ContextFlyout(BuildMenu(box_value(static_cast<uint64_t>(gidx))));
 
         ui.body = Controls::StackPanel();
 
+        // 头部：[图标][标题/时间][原因][箭头]
         auto head = Controls::Grid();
-        for (int i = 0; i < 9; ++i) {
-            auto cd = Controls::ColumnDefinition();
-            if (i == 0) cd.Width(GridLengthHelper::FromValueAndType(kIconButtonSize, GridUnitType::Pixel));
-            else if (i == 3) cd.Width(GridLengthHelper::FromValueAndType(150, GridUnitType::Pixel));
-            else if (i == 4) cd.Width(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
-            else if (i == 7) cd.Width(GridLengthHelper::FromValueAndType(kColIconWidth, GridUnitType::Pixel));
-            else cd.Width(GridLengthHelper::FromValueAndType(0, GridUnitType::Auto));
-            head.ColumnDefinitions().Append(cd);
-        }
-        head.Padding(ThicknessHelper::FromLengths(0, 6, 0, 6));
+        head.ColumnSpacing(12);
+        auto cdIcon = Controls::ColumnDefinition();
+        cdIcon.Width(GridLengthHelper::FromValueAndType(0, GridUnitType::Auto));
+        auto cdText = Controls::ColumnDefinition();
+        cdText.Width(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+        auto cdTag = Controls::ColumnDefinition();
+        cdTag.Width(GridLengthHelper::FromValueAndType(0, GridUnitType::Auto));
+        auto cdBtn = Controls::ColumnDefinition();
+        cdBtn.Width(GridLengthHelper::FromValueAndType(0, GridUnitType::Auto));
+        head.ColumnDefinitions().Append(cdIcon);
+        head.ColumnDefinitions().Append(cdText);
+        head.ColumnDefinitions().Append(cdTag);
+        head.ColumnDefinitions().Append(cdBtn);
 
-        ui.chip = Controls::Border();
-        ui.chip.CornerRadius(CornerRadiusHelper::FromUniformRadius(4));
-        ui.chip.Padding(ThicknessHelper::FromLengths(6, 1, 6, 1));
-        ui.chip.VerticalAlignment(VerticalAlignment::Center);
-        ui.actionText = Controls::TextBlock();
-        ui.actionText.FontSize(11);
-        ui.actionText.Foreground(MakeBrush(0xFF, 0xFF, 0xFF));
-        ui.chip.Child(ui.actionText);
-        Controls::Grid::SetColumn(ui.chip, 1);
-        head.Children().Append(ui.chip);
+        ui.actionIcon = Controls::FontIcon();
+        ui.actionIcon.FontSize(20);
+        ui.actionIcon.Margin(ThicknessHelper::FromLengths(4, 2, 4, 0));
+        ui.actionIcon.VerticalAlignment(VerticalAlignment::Top);
+        Controls::Grid::SetColumn(ui.actionIcon, 0);
+        head.Children().Append(ui.actionIcon);
 
-        ui.badgeBox = Controls::Border();
-        ui.badgeBox.CornerRadius(CornerRadiusHelper::FromUniformRadius(8));
-        ui.badgeBox.Padding(ThicknessHelper::FromLengths(6, 0, 6, 0));
-        ui.badgeBox.MinWidth(16);
-        ui.badgeBox.Height(16);
-        ui.badgeBox.Background(MakeBrush(0x33, 0x66, 0x99));
-        ui.badgeBox.VerticalAlignment(VerticalAlignment::Center);
-        ui.badgeBox.Margin(ThicknessHelper::FromLengths(6, 0, 0, 0));
-        ui.badgeText = Controls::TextBlock();
-        ui.badgeText.FontSize(10);
-        ui.badgeText.Foreground(MakeBrush(0xFF, 0xFF, 0xFF));
-        ui.badgeText.HorizontalAlignment(HorizontalAlignment::Center);
-        ui.badgeBox.Child(ui.badgeText);
-        Controls::Grid::SetColumn(ui.badgeBox, 2);
-        head.Children().Append(ui.badgeBox);
-
-        ui.exeText = Controls::TextBlock();
-        ui.exeText.FontFamily(Media::FontFamily(L"Consolas"));
-        ui.exeText.FontSize(12);
-        ui.exeText.Margin(ThicknessHelper::FromLengths(8, 0, 0, 0));
-        ui.exeText.TextTrimming(TextTrimming::CharacterEllipsis);
-        Controls::Grid::SetColumn(ui.exeText, 3);
-        head.Children().Append(ui.exeText);
-
+        auto textCol = Controls::StackPanel();
+        textCol.Spacing(2);
         ui.titleText = Controls::TextBlock();
-        ui.titleText.FontSize(12);
-        ui.titleText.Foreground(BrushDim());
-        ui.titleText.Margin(ThicknessHelper::FromLengths(8, 0, 0, 0));
+        ui.titleText.FontSize(14);
+        ui.titleText.FontWeight(winrt::Windows::UI::Text::FontWeights::SemiBold());
         ui.titleText.TextTrimming(TextTrimming::CharacterEllipsis);
-        Controls::Grid::SetColumn(ui.titleText, 4);
-        head.Children().Append(ui.titleText);
+        ui.subText = Controls::TextBlock();
+        ui.subText.FontSize(12);
+        ui.subText.Foreground(ResBrush(L"LogSubFgBrush"));
+        ui.subText.TextTrimming(TextTrimming::CharacterEllipsis);
+        textCol.Children().Append(ui.titleText);
+        textCol.Children().Append(ui.subText);
+        Controls::Grid::SetColumn(textCol, 1);
+        head.Children().Append(textCol);
 
-        ui.timeText = Controls::TextBlock();
-        ui.timeText.FontSize(11);
-        ui.timeText.Foreground(BrushDim());
-        Controls::Grid::SetColumn(ui.timeText, 5);
-        head.Children().Append(ui.timeText);
-
-        ui.reasonText = Controls::TextBlock();
-        ui.reasonText.FontSize(11);
-        ui.reasonText.Margin(ThicknessHelper::FromLengths(8, 0, 0, 0));
-        Controls::Grid::SetColumn(ui.reasonText, 6);
-        head.Children().Append(ui.reasonText);
-
+        auto tagCol = Controls::StackPanel();
+        tagCol.Orientation(Controls::Orientation::Horizontal);
+        tagCol.Spacing(6);
+        tagCol.VerticalAlignment(VerticalAlignment::Center);
         ui.labelIcon = Controls::FontIcon();
         ui.labelIcon.FontSize(12);
-        Controls::Grid::SetColumn(ui.labelIcon, 7);
-        head.Children().Append(ui.labelIcon);
+        ui.tagText = Controls::TextBlock();
+        ui.tagText.FontSize(12);
+        ui.tagText.Foreground(ResBrush(L"LogSubFgBrush"));
+        tagCol.Children().Append(ui.labelIcon);
+        tagCol.Children().Append(ui.tagText);
+        Controls::Grid::SetColumn(tagCol, 2);
+        head.Children().Append(tagCol);
 
-        ui.body.Children().Append(head);
-
-        ui.subPanel = Controls::StackPanel();
-        ui.subPanel.Visibility(Visibility::Collapsed);
-        ui.body.Children().Append(ui.subPanel);
-
-        ui.root.Child(ui.body);
-
-        // chevron 按钮（第 0 列）
         ui.chevronBtn = Controls::Button();
         ui.chevronBtn.Padding(ThicknessHelper::FromUniformLength(0));
         ui.chevronBtn.MinWidth(kIconButtonSize);
@@ -539,30 +606,51 @@ namespace winrt::winui::implementation
         ui.chevronBtn.Click({ this, &BlockLogPage::RowChevronClick });
 
         ui.chevron = Controls::FontIcon();
-        ui.chevron.Glyph(L"\xE76C");
+        ui.chevron.Glyph(L"\xE70D");
         ui.chevron.FontSize(12);
         ui.rot = Media::RotateTransform();
         ui.chevron.RenderTransform(ui.rot);
         ui.chevron.RenderTransformOrigin(winrt::Windows::Foundation::Point{ 0.5f, 0.5f });
         ui.chevronBtn.Content(ui.chevron);
-        Controls::Grid::SetColumn(ui.chevronBtn, 0);
+        Controls::Grid::SetColumn(ui.chevronBtn, 3);
         head.Children().Append(ui.chevronBtn);
 
-        // 行尾"⋯"按钮（第 8 列）
-        auto menuBtn = Controls::Button();
-        menuBtn.Content(box_value(hstring(L"⋯")));
-        menuBtn.Padding(ThicknessHelper::FromUniformLength(0));
-        menuBtn.MinWidth(kIconButtonSize);
-        menuBtn.MinHeight(kIconButtonSize);
-        menuBtn.FontSize(12);
-        menuBtn.Background(Media::SolidColorBrush(winrt::Windows::UI::Color{ 0x00, 0x00, 0x00, 0x00 }));
-        menuBtn.BorderThickness(ThicknessHelper::FromUniformLength(0));
-        menuBtn.Flyout(BuildMenu(box_value(static_cast<uint64_t>(gidx))));
-        Controls::Grid::SetColumn(menuBtn, 8);
-        head.Children().Append(menuBtn);
+        ui.body.Children().Append(head);
 
-        // 聚合行右键：ContextFlyout，Tag 存 gidx
-        ui.root.ContextFlyout(BuildMenu(box_value(static_cast<uint64_t>(gidx))));
+        // 展开区：提示条 + 详细信息 + 说明 + 链接 + 事件记录
+        ui.subPanel = Controls::StackPanel();
+        ui.subPanel.Spacing(12);
+        ui.subPanel.Margin(ThicknessHelper::FromLengths(32, 12, 0, 4));
+        ui.subPanel.Visibility(Visibility::Collapsed);
+
+        ui.callout = Controls::InfoBar();
+        ui.callout.IsOpen(true);
+        ui.callout.IsClosable(false);
+        ui.callout.Severity(Controls::InfoBarSeverity::Informational);
+        ui.subPanel.Children().Append(ui.callout);
+
+        ui.detailPanel = Controls::StackPanel();
+        ui.detailPanel.Spacing(4);
+        ui.subPanel.Children().Append(ui.detailPanel);
+
+        ui.hintText = Controls::TextBlock();
+        ui.hintText.FontSize(12);
+        ui.hintText.Foreground(ResBrush(L"LogSubFgBrush"));
+        ui.hintText.TextWrapping(TextWrapping::Wrap);
+        ui.subPanel.Children().Append(ui.hintText);
+
+        auto link = Controls::HyperlinkButton();
+        link.Content(box_value(hstring(L"打开规则页")));
+        link.Padding(ThicknessHelper::FromUniformLength(0));
+        link.Click({ this, &BlockLogPage::OpenRules_Click });
+        ui.subPanel.Children().Append(link);
+
+        ui.rawPanel = Controls::StackPanel();
+        ui.rawPanel.Spacing(2);
+        ui.subPanel.Children().Append(ui.rawPanel);
+
+        ui.body.Children().Append(ui.subPanel);
+        ui.root.Child(ui.body);
 
         return ui;
     }
@@ -579,17 +667,17 @@ namespace winrt::winui::implementation
         }
         if (!ui) return;
 
-        ui->subPanel.Children().Clear();
+        ui->rawPanel.Children().Clear();
         if (g.expanded) {
             size_t n = g.raws.size();
             size_t from = (n > kMaxSubRows) ? n - kMaxSubRows : 0;
-            for (size_t i = n; i-- > from; ) ui->subPanel.Children().Append(BuildSubRow(g.raws[i]));
+            for (size_t i = n; i-- > from; ) ui->rawPanel.Children().Append(BuildSubRow(g.raws[i]));
             if (n > kMaxSubRows) {
                 auto tip = Controls::TextBlock();
-                tip.Text(std::wstring(L"        … 仅显示最近 ") + std::to_wstring(kMaxSubRows) + L" 条 …");
+                tip.Text(std::wstring(L"… 仅显示最近 ") + std::to_wstring(kMaxSubRows) + L" 条事件 …");
                 tip.FontSize(11);
                 tip.Foreground(BrushDim());
-                ui->subPanel.Children().Append(tip);
+                ui->rawPanel.Children().Append(tip);
             }
         }
         UpdateRowUi(*ui, g);
@@ -702,7 +790,7 @@ namespace winrt::winui::implementation
             if (m_groups[i].expanded) {
                 size_t n = m_groups[i].raws.size();
                 size_t from = (n > kMaxSubRows) ? n - kMaxSubRows : 0;
-                for (size_t r = n; r-- > from; ) ui.subPanel.Children().Append(BuildSubRow(m_groups[i].raws[r]));
+                for (size_t r = n; r-- > from; ) ui.rawPanel.Children().Append(BuildSubRow(m_groups[i].raws[r]));
                 ui.subPanel.Visibility(Visibility::Visible);
             }
             m_rows.push_back(ui);
@@ -907,6 +995,14 @@ namespace winrt::winui::implementation
             MessageBoxW(nullptr, L"训练数据导出成功，本地缓存已清空", L"提示", MB_OK | MB_ICONINFORMATION);
         }
         else MessageBoxW(nullptr, L"导出失败", L"提示", MB_OK | MB_ICONERROR);
+    }
+
+    void BlockLogPage::OpenRules_Click(IInspectable const&, RoutedEventArgs const&)
+    {
+        auto window = winrt::winui::implementation::App::window;
+        if (!window) return;
+        if (auto mainWindow = window.try_as<winrt::winui::MainWindow>())
+            mainWindow.NavigateToTag(L"Blocker");
     }
 
     void BlockLogPage::AddToBlacklist_Click(IInspectable const& sender, RoutedEventArgs const&)

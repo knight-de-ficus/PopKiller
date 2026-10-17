@@ -28,16 +28,16 @@ namespace winrt::winui::implementation
         winrt::Microsoft::UI::Xaml::Controls::StackPanel body{ nullptr };
         winrt::Microsoft::UI::Xaml::Controls::FontIcon chevron{ nullptr };
         winrt::Microsoft::UI::Xaml::Media::RotateTransform rot{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::Border chip{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::TextBlock actionText{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::Border badgeBox{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::TextBlock badgeText{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::TextBlock exeText{ nullptr };
+        winrt::Microsoft::UI::Xaml::Controls::FontIcon actionIcon{ nullptr };
         winrt::Microsoft::UI::Xaml::Controls::TextBlock titleText{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::TextBlock timeText{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::TextBlock reasonText{ nullptr };
+        winrt::Microsoft::UI::Xaml::Controls::TextBlock subText{ nullptr };
+        winrt::Microsoft::UI::Xaml::Controls::TextBlock tagText{ nullptr };
         winrt::Microsoft::UI::Xaml::Controls::FontIcon labelIcon{ nullptr };
         winrt::Microsoft::UI::Xaml::Controls::StackPanel subPanel{ nullptr };
+        winrt::Microsoft::UI::Xaml::Controls::InfoBar callout{ nullptr };
+        winrt::Microsoft::UI::Xaml::Controls::StackPanel detailPanel{ nullptr };
+        winrt::Microsoft::UI::Xaml::Controls::TextBlock hintText{ nullptr };
+        winrt::Microsoft::UI::Xaml::Controls::StackPanel rawPanel{ nullptr };
     };
 
     struct BlockLogPage : BlockLogPageT<BlockLogPage>
@@ -58,6 +58,7 @@ namespace winrt::winui::implementation
         void OnLogListLoaded(winrt::Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::RoutedEventArgs const& args);
         void NewLogJumpButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::RoutedEventArgs const& args);
         void RowChevronClick(winrt::Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::RoutedEventArgs const& e);
+        void OpenRules_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::RoutedEventArgs const& e);
 
     private:
         void Load();
@@ -77,6 +78,12 @@ namespace winrt::winui::implementation
         RowUi BuildRow(size_t gidx);
         void UpdateRowUi(RowUi& ui, LogGroup const& g);
         winrt::Microsoft::UI::Xaml::Controls::StackPanel BuildSubRow(std::wstring const& raw);
+        winrt::Microsoft::UI::Xaml::Controls::Grid BuildDetailRow(std::wstring const& label, std::wstring const& value);
+        winrt::Microsoft::UI::Xaml::Media::SolidColorBrush ResBrush(wchar_t const* key);
+        std::wstring ActionSentence(std::wstring const& action) const;
+        std::wstring ReasonLabel(std::wstring const& reason) const;
+        std::wstring CalloutText(LogGroup const& g) const;
+        std::wstring HintText(LogGroup const& g) const;
         void ToggleExpand(size_t gidx);
         void SetLabelIcon(winrt::Microsoft::UI::Xaml::Controls::FontIcon const& icon, std::wstring const& raw);
         winrt::Microsoft::UI::Xaml::Controls::MenuFlyout BuildMenu(winrt::Windows::Foundation::IInspectable const& tagValue);
