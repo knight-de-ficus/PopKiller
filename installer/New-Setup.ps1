@@ -39,14 +39,18 @@ if (-not (Test-Path (Join-Path $PSScriptRoot "lang\ChineseSimplified.isl"))) {
     throw "缺少 installer\lang\ChineseSimplified.isl（简体中文语言文件）"
 }
 
-# ISCC（Inno Setup 编译器）
+# ISCC（Inno Setup 编译器，支持 6.x / 7.x）
 if (-not $Iscc) {
-    $candidates = @(
-        (Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"),
-        (Join-Path $env:ProgramFiles "Inno Setup 6\ISCC.exe"),
-        (Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 6\ISCC.exe")
-    )
-    $Iscc = $candidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+    $candidates = @()
+    foreach ($base in @(${env:ProgramFiles(x86)}, $env:ProgramFiles, (Join-Path $env:LOCALAPPDATA "Programs"))) {
+        if ($base -and (Test-Path $base)) {
+            $candidates += Get-ChildItem $base -Directory -Filter "Inno Setup*" -ErrorAction SilentlyContinue |
+                Sort-Object Name -Descending |
+                ForEach-Object { Join-Path $_.FullName "ISCC.exe" } |
+                Where-Object { Test-Path $_ }
+        }
+    }
+    $Iscc = $candidates | Select-Object -First 1
     if (-not $Iscc) { $Iscc = (Get-Command iscc.exe -ErrorAction SilentlyContinue).Source }
 }
 if (-not $Iscc -or -not (Test-Path $Iscc)) {

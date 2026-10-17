@@ -5,8 +5,8 @@
 ## 前置
 
 1. 已构建 Release|x64（存在 `x64\Release\winui\winui.exe`）。
-2. 安装 **Inno Setup 6.5+**（https://jrsoftware.org/isdl.php）。简体中文语言文件已随仓库提供：`installer/lang/ChineseSimplified.isl`。
-   - `ISCC.exe` 默认查找顺序：`C:\Program Files (x86)\Inno Setup 6`、`C:\Program Files\Inno Setup 6`、`%LOCALAPPDATA%\Programs\Inno Setup 6`；也可用 `-Iscc` 显式指定。
+2. 安装 **Inno Setup 6.5+ 或 7.x**（https://jrsoftware.org/isdl.php）。简体中文语言文件已随仓库提供：`installer/lang/ChineseSimplified.isl`。
+   - `ISCC.exe` 默认查找顺序：`Program Files*\Inno Setup*`（取版本号最高者）、`%LOCALAPPDATA%\Programs\Inno Setup*`；也可用 `-Iscc` 显式指定。
 
 ## 使用
 

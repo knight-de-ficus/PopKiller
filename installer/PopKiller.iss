@@ -69,6 +69,8 @@ AllowNoIcons=no
 DirExistsWarning=auto
 UsePreviousAppDir=yes
 UsePreviousTasks=yes
+; 自启项按设计写 HKCU（程序自身也读写 HKCU），抑制“admin 模式使用用户区域”的构建警告
+UsedUserAreasWarning=no
 
 [Languages]
 Name: "zh"; MessagesFile: "{#SourcePath}\lang\ChineseSimplified.isl"

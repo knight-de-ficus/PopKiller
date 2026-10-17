@@ -425,7 +425,7 @@ cd PopKiller
 4. 预构建事件会自动运行 `scripts/GenerateVersion.ps1`，根据 git 提交哈希与日期生成 `VersionInfo.h`；
 5. 输出目录下的 `winui.exe` 即为可执行文件；
 6. 确保 `StaticML\` 目录下的两个 `.onnx` 模型文件与 `winui.exe` 在同一目录层级；
-7. （可选）生成安装包：安装 [Inno Setup 6.5+](https://jrsoftware.org/isdl.php)（中文语言文件已随仓库提供），再执行
+7. （可选）生成安装包：安装 [Inno Setup 6.5+ / 7.x](https://jrsoftware.org/isdl.php)（中文语言文件已随仓库提供），再执行
    `pwsh -File installer\New-Setup.ps1 -Version x.y.z`，产物输出到 `dist\`。
 
 > 说明：本项目为**自包含（self-contained）**部署，Release 包内已含 Windows App SDK 运行时，**目标机无需单独安装**；建议目标机具备 VC++ 2015–2022 x64 运行库。
