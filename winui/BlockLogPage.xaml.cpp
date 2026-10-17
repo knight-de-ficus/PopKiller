@@ -259,7 +259,10 @@ namespace winrt::winui::implementation
         g.cls = ExtractVal(raw, L"class");
         if (g.reason.find(L"heuristic") == 0) g.reason = L"heuristic";
 
-        g.mlY = raw.find(L" ml=Y") != std::wstring::npos;
+        if (raw.find(L" ml=Y") != std::wstring::npos) g.ml = L"Y";
+        else if (raw.find(L" ml=N") != std::wstring::npos) g.ml = L"N";
+        else if (raw.find(L" ml=-") != std::wstring::npos) g.ml = L"-";
+        g.mlY = (g.ml == L"Y");
         auto heurPos = raw.find(L"heuristic(");
         if (heurPos != std::wstring::npos) {
             size_t endPos = raw.find(L')', heurPos);
@@ -444,10 +447,14 @@ namespace winrt::winui::implementation
     std::wstring BlockLogPage::CalloutText(LogGroup const& g) const
     {
         if (g.action == L"allow" || g.reason == L"whitelist") return L"命中白名单规则，已放行该窗口。";
+        if (g.action != L"block") {
+            if (g.reason.rfind(L"heuristic", 0) == 0) return L"启发式评分未达阈值，仅记录、未处理。";
+            return L"仅记录该窗口的评估结果，未做处理。";
+        }
         if (g.reason == L"focus_steal") return L"检测到焦点窃取，已阻止该窗口抢占前台。";
-        if (g.reason.rfind(L"heuristic", 0) == 0) return L"启发式判定为弹窗，已关闭该窗口。";
+        if (g.reason.rfind(L"heuristic", 0) == 0) return L"启发式评分超过阈值，已关闭该窗口。";
         if (g.reason == L"blacklist") return L"命中黑名单规则，已关闭该窗口。";
-        return L"已记录该窗口的评估结果。";
+        return L"已处理该窗口。";
     }
 
     std::wstring BlockLogPage::HintText(LogGroup const& g) const
@@ -520,9 +527,15 @@ namespace winrt::winui::implementation
         if (!g.title.empty()) ui.detailPanel.Children().Append(BuildDetailRow(L"窗口标题", g.title));
         if (!g.cls.empty())   ui.detailPanel.Children().Append(BuildDetailRow(L"窗口类名", g.cls));
         ui.detailPanel.Children().Append(BuildDetailRow(L"判定依据", ReasonLabel(g.reason)));
-        if (g.score > 0) ui.detailPanel.Children().Append(BuildDetailRow(L"启发式分数", std::to_wstring(g.score)));
         if (g.reason.rfind(L"heuristic", 0) == 0)
-            ui.detailPanel.Children().Append(BuildDetailRow(L"ML 判定", g.mlY ? L"是（弹窗）" : L"否"));
+            ui.detailPanel.Children().Append(BuildDetailRow(L"启发式分数", std::to_wstring(g.score)));
+        if (g.reason.rfind(L"heuristic", 0) == 0) {
+            std::wstring mlText = (g.ml == L"Y") ? L"是（弹窗）"
+                : (g.ml == L"N") ? L"否"
+                : (g.ml == L"-") ? L"跳过（ML 未启用或未参与）"
+                : L"未记录";
+            ui.detailPanel.Children().Append(BuildDetailRow(L"ML 判定", mlText));
+        }
         if (g.count > 1)
             ui.detailPanel.Children().Append(BuildDetailRow(L"时间范围", g.firstTime + L" ~ " + g.lastTime));
 
@@ -700,6 +713,10 @@ namespace winrt::winui::implementation
         if (filterTag == L"action_allow")   return g.action == L"allow";
         if (filterTag == L"action_monitor") return g.action == L"monitor";
         if (filterTag == L"list") return (g.reason == L"whitelist" || g.reason == L"blacklist");
+        if (filterTag == L"ml_heur" || filterTag == L"ml_list") {
+            // ML 跳过/未记录不属于「ML 冲突」
+            if (g.ml != L"Y" && g.ml != L"N") return false;
+        }
         if (filterTag == L"ml_heur") {
             if (g.reason == L"heuristic") return (g.score >= threshold) != g.mlY;
             return false;

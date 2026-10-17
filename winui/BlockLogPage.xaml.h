@@ -17,7 +17,8 @@ namespace winrt::winui::implementation
         std::wstring lastRaw;
         std::vector<std::wstring> raws;
         bool expanded = false;
-        bool mlY = false;
+        bool mlY = false;          // ML 判定为弹窗（仅 ml=Y）
+        std::wstring ml;           // ML 判定原始三态：Y / N / -（跳过）/ 空（无）
         int score = 0;
         uint64_t seq = 0;
     };
