@@ -76,8 +76,8 @@ UsedUserAreasWarning=no
 Name: "zh"; MessagesFile: "{#SourcePath}\lang\ChineseSimplified.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加任务："
-Name: "autostart"; Description: "开机自动启动 PopKiller（后台静默运行）"; GroupDescription: "附加任务："; Flags: unchecked
+Name: "desktopicon"; Description: "创建桌面快捷方式"
+Name: "autostart"; Description: "开机自动启动 PopKiller（后台静默运行）"; Flags: unchecked
 
 [Files]
 Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
