@@ -518,20 +518,26 @@ namespace HeuristicScorer
         return b;
     }
 
+    // 基础设施窗口类：工具提示 / IME / 拖影 / 系统遮罩等，既不打分也不拦截
+    inline bool IsInfraClass(std::wstring const& cls)
+    {
+        return cls == L"consolewindowclass" ||
+            cls.find(L"microsoftwindowstooltip") != std::wstring::npos ||
+            cls.find(L"pseudoconsole") != std::wstring::npos ||
+            cls.rfind(L"hwndwrapper", 0) == 0 ||
+            cls == L"tooltip" || cls.rfind(L"tooltip_", 0) == 0 ||
+            cls == L"msctfime ui" || cls == L"default ime" ||
+            cls == L"dragvisualwindow" ||
+            cls == L"#32768" ||
+            cls == L"shell_systemdialog" ||
+            cls == L"shell_systemdialogproxy" ||
+            cls == L"shell_systemdim";
+    }
+
     // 加权打分：输入 Features，返回 ≥0 的分数并填充 detail 明细；命中硬过滤（基础设施类/零尺寸）时返回 0 且 detail 为 *_skip。
     inline int ScoreWindow(Features const& f, std::wstring& detail)
     {
-        if (f.cls == L"consolewindowclass" ||
-            f.cls.find(L"microsoftwindowstooltip") != std::wstring::npos ||
-            f.cls.find(L"pseudoconsole") != std::wstring::npos ||
-            f.cls.rfind(L"hwndwrapper", 0) == 0 ||
-            f.cls == L"tooltip" || f.cls.rfind(L"tooltip_", 0) == 0 ||
-            f.cls == L"msctfime ui" || f.cls == L"default ime" ||
-            f.cls == L"dragvisualwindow" ||
-            f.cls == L"#32768" ||
-            f.cls == L"shell_systemdialog" ||
-            f.cls == L"shell_systemdialogproxy" ||
-            f.cls == L"shell_systemdim")
+        if (IsInfraClass(f.cls))
         {
             detail = L"infra_class_skip";
             return 0;

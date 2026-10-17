@@ -881,6 +881,16 @@ namespace PopupBlocker
             return true;
         }
 
+        // 基础设施窗口（与启发式硬过滤同源）：类名命中或尺寸为 0 → 不当作弹窗/焦点窃取
+        inline bool IsInfraWindow(HWND hwnd)
+        {
+            RECT r{};
+            if (::GetWindowRect(hwnd, &r)) {
+                if (r.right - r.left <= 0 || r.bottom - r.top <= 0) return true;
+            }
+            return HeuristicScorer::IsInfraClass(GetClass(hwnd));
+        }
+
         inline EventVerdict EvaluateWindow(HWND hwnd, DWORD idEventTime, DWORD prevForegroundPid)
         {
             EventVerdict v;
@@ -1069,6 +1079,7 @@ namespace PopupBlocker
             && GameMode
             && InFullscreenGame()
             && (idEvent == EVENT_SYSTEM_FOREGROUND || idEvent == EVENT_OBJECT_SHOW)
+            && !detail::IsInfraWindow(hwnd)
             && detail::Match(hwnd) != kFlagWhite
             && detail::IsNewlyCreated(hwnd)
             && hwnd != detail::LastFullscreenHwnd)

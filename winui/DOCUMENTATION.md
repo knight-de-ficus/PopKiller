@@ -142,6 +142,7 @@ MutateRules([&](std::vector<Rule>& rules, std::vector<std::wstring>&) {
 | `Match(hwnd)` | 句柄 | `int` | 0=未命中 1=白 2=黑；多条件/类名随机规则线性 AND 扫描 |
 | `Log(s)` | 日志行 | `void` | 写入内存缓冲，达 64KB 或 `FlushLog` 时落盘；新文件/空文件/超 1MB 时截断并写 BOM |
 | `PassEventFilter(hwnd, idObject, idChild)` | 句柄、对象、子ID | `bool` | 事件预过滤（跳过自身/非窗口/对象） |
+| `IsInfraWindow(hwnd)` | 句柄 | `bool` | 基础设施窗口判定（类名命中 `IsInfraClass` 或尺寸为 0）；焦点窃取分支同样用它跳过拖影/提示/IME/系统遮罩 |
 | `EvaluateWindow(hwnd, idEventTime)` | 句柄、事件时间 | `EventVerdict` | 综合评估：规则匹配+启发式+ML+raw |
 | `WriteEventLog(hwnd, idEvent, v)` | 句柄、事件、评估结果 | `void` | 写日志（含启发式明细+raw+ml） |
 | `EnforceBlock(hwnd)` | 句柄 | `void` | 关闭/隐藏窗口（黑名单与启发式命中一致） |
@@ -149,7 +150,7 @@ MutateRules([&](std::vector<Rule>& rules, std::vector<std::wstring>&) {
 | `EnforceFocusSteal(hwnd)` | 句柄 | `void` | 焦点窃取：去置顶 + `WM_CLOSE` + 隐藏 |
 | `MakeFocusStealVerdict()` | 无 | `EventVerdict` | 构造 `reason=focus_steal`、`action=block` 的评估结果 |
 | `ThreadMain(lp)` | 无 | `DWORD` | 挂 SHOW/FOREGROUND 双钩子 + 消息循环 |
-| `WinEventProc(hook, event, hwnd, idObject, idChild, thread, time)` | 事件参数 | `void` | 入口：过滤→评估→执行→日志→通知 |
+| `WinEventProc(hook, event, hwnd, idObject, idChild, thread, time)` | 事件参数 | `void` | 入口：过滤→（全屏游戏且非基础设施窗口的焦点窃取分支）→评估→执行→日志→通知 |
 
 输出结构：`EventVerdict{ action, reason, detail, shouldBlock, shouldLog, matchResult }`。
 
@@ -185,6 +186,7 @@ MutateRules([&](std::vector<Rule>& rules, std::vector<std::wstring>&) {
 | `ExtractFeatures(hwnd, evTime)` | 句柄、事件时间 | `Features` | 21 项特征（含 `path`、`cls`） |
 | `BuildRawBits(f, rc, evTime)` | 特征、窗口矩形、事件时间 | `std::wstring` | 21 位 T/F/U 特征串：`raw[14]`=`unsigned`（T 未签名/F 已签名/U 未知），含空闲/鼠标距离/父进程/同前台 |
 | `ScoreWindow(f, detail&)` | 特征、明细串(out) | `int` | ≥0 分数；硬过滤时返回 0 且 detail 为 skip 标记 |
+| `IsInfraClass(cls)` | 小写类名 | `bool` | 基础设施类（工具提示/IME/拖影 `dragvisualwindow`/`#32768`/系统遮罩等）——`ScoreWindow` 与焦点窃取共用同一份名单 |
 
 全局状态：`g_weights`（权重表）、`SigCache`。
 输出结构：`Features{ hasOwner, toolWin, topmost, noActivate, resizable, hasMinMax, captionSysmenu, wDip, hDip, dpiScale, titleEmpty, titleKwHits, clsHexRatio, pathTemp, pathRoaming, procAgeSec, userIdle, farFromMouse, parentExplorer, parentSystem, parentUnknown, sameProcAsPrevForeground, path, cls }`（均为 float + 2 个 wstring；`wDip/hDip` 为按窗口 DPI（`GetDpiForWindow`）归一的逻辑像素，`farFromMouse` 亦按 DPI 归一；`parent*` 为父进程/启动者类别，`sameProcAsPrevForeground` 为“弹窗进程 == 本事件前的前台进程”）。
