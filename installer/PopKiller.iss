@@ -189,6 +189,15 @@ begin
   DeleteFile(ExpandConstant('{commonappdata}\Microsoft\Windows\Start Menu\Programs\Startup\PopKiller.lnk'));
 end;
 
+procedure DeleteMenuShortcuts();
+begin
+  { Inno 建的是 PopKiller.lnk；旧 MSI 建的是「PopKiller」文件夹，两种都清 }
+  DeleteFile(ExpandConstant('{commonprograms}\PopKiller.lnk'));
+  DeleteFile(ExpandConstant('{userprograms}\PopKiller.lnk'));
+  DelTree(ExpandConstant('{commonprograms}\PopKiller'), True, True, True);
+  DelTree(ExpandConstant('{userprograms}\PopKiller'), True, True, True);
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usPostUninstall then
@@ -197,5 +206,6 @@ begin
     RegDeleteValue(HKCU, '{#RunKey}', '{#AppName}');
     RegDeleteValue(HKLM, '{#RunKey}', '{#AppName}');
     DeleteLegacyStartupShortcuts();
+    DeleteMenuShortcuts();
   end;
 end;
