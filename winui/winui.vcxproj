@@ -144,6 +144,7 @@
   <ItemGroup>
     <Manifest Include="app.manifest" />
     <ResourceCompile Include="winui.rc" />
+    <ResourceCompile Include="app.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppSettings.h" />
@@ -193,6 +194,9 @@
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="TrayIcon.h" />
+    <None Include="app.rc" />
+    <None Include="Assets\app.ico" />
+    <None Include="Assets\app.png" />
     <ClInclude Include="WindowPicker.h" />
   </ItemGroup>
   <ItemGroup>

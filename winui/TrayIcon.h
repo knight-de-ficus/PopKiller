@@ -32,7 +32,14 @@ namespace TrayIcon
     {
         std::wstring path = GetSelfPath();
         HMODULE hm = ::GetModuleHandleW(nullptr);
-        HICON ic = hm ? ::ExtractIconW(hm, path.c_str(), 0) : nullptr;
+
+        // 优先按资源 ID 取小尺寸图标（托盘 16/20/24px 更清晰）；101 = IDI_APPICON（见 winui\app.rc）
+        HICON ic = nullptr;
+        if (hm) {
+            ic = (HICON)::LoadImageW(hm, MAKEINTRESOURCEW(101), IMAGE_ICON,
+                ::GetSystemMetrics(SM_CXSMICON), ::GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+        }
+        if (!ic && hm) ic = ::ExtractIconW(hm, path.c_str(), 0);
         if (!ic) ic = ::LoadIconW(nullptr, IDI_APPLICATION);
         return ic;
     }

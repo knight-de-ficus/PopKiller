@@ -46,6 +46,7 @@ VersionInfoVersion={#AppVer}
 VersionInfoProductName={#AppName}
 VersionInfoCompany={#AppPublisher}
 DefaultDirName=C:\PopKiller
+SetupIconFile={#SourcePath}\..\winui\Assets\app.ico
 DisableProgramGroupPage=yes
 DefaultGroupName={#AppName}
 UninstallDisplayName={#AppName}

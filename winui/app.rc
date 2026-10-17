@@ -1,0 +1,6 @@
+#include <windows.h>
+
+// 应用图标：exe 资源管理器图标、任务栏图标、托盘图标均取自这里。
+// 单独放在 app.rc（而不是生成的 winui.rc），避免版本脚本重写时丢失。
+// 101 与 TrayIcon.h 中 LoadImageW 的资源 ID 对应。
+101 ICON "Assets\\app.ico"
