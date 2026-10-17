@@ -7,7 +7,7 @@
 #
 # 用法（在仓库根或任意位置）：
 #   pwsh -File installer\New-Msi.ps1
-#   pwsh -File installer\New-Msi.ps1 -Version 0.9.1 -MsiName PopKiller-Beta0.9.1-x64.msi
+#   pwsh -File installer\New-Msi.ps1 -Version 0.10.0 -MsiName PopKiller-Beta0.10.0-x64.msi
 #
 # 说明：脚本会把 VC++ 运行时（app-local）与打包所需文件放进临时舞台，排除 pdb/lib/exp 与运行期文件，
 #       生成 .wxs 后调用 wix build。产物默认输出到 dist\。
@@ -16,7 +16,7 @@
 param(
   [string]$AppOutput,                                   # 默认 <repo>\x64\Release\winui
   [string]$OutputDir,                                   # 默认 <repo>\dist
-  [string]$Version = "0.9.0",
+  [string]$Version = "0.10.0",
   [string]$MsiName,
   [string]$Culture = "zh-CN",
   [string]$UpgradeCode = "3F2E7C1A-9B44-4D2E-8C6F-1A2B3C4D5E6F"

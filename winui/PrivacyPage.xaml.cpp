@@ -3,7 +3,7 @@
 #if __has_include("VersionInfo.h")
 #include "VersionInfo.h"
 #else
-#define APP_VERSION_STRING L"Beta 0.9"
+#define APP_VERSION_STRING L"Beta 0.10"
 #endif
 #if __has_include("PrivacyPage.g.cpp")
 #include "PrivacyPage.g.cpp"

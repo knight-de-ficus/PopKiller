@@ -16,7 +16,7 @@
 #if __has_include("VersionInfo.h")
 #include "VersionInfo.h"
 #else
-#define APP_VERSION_STRING L"Beta 0.8"
+#define APP_VERSION_STRING L"Beta 0.10"
 #endif
 
 using namespace winrt;
