@@ -120,7 +120,7 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel VerticalAlignment="Center" Spacing="2">
                                 <TextBlock Text="静态机器学习" Style="{StaticResource BodyTextBlockStyle}"/>
-                                <TextBlock Text="启用双模型影子打分，辅助启发式识别。"
+                                <TextBlock Text="启发式评分处于 35–95 灰区时，由双模型投票决定是否拦截。"
                                            Style="{StaticResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
                             </StackPanel>

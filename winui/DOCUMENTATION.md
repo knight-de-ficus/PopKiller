@@ -73,7 +73,7 @@
 | `HeuristicMode` | `int` | 启发式模式（0关/1仅记录/2自动拦截） |
 | `HeuristicThreshold` | `int` | 启发式拦截阈值（默认 70） |
 | `VerboseLog` | `bool` | 详细日志开关 |
-| `MLHeuristic` | `bool` | 机器学习识别开关（仅记录） |
+| `MLHeuristic` | `bool` | 机器学习识别开关（启发式灰区 35–95 由双模型投票决定是否拦截） |
 | `ToastNotify` | `bool` | 拦截通知开关（默认开） |
 | `FullscreenGame` | `std::atomic<bool>` | 全屏游戏/应用检测缓存 |
 | `GameMode` | `bool` | 游戏模式开关（全屏时拦截焦点窃取，默认关） |
