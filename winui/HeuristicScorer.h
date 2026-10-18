@@ -535,10 +535,19 @@ namespace HeuristicScorer
             cls == L"shell_systemdim";
     }
 
+    // 崩溃报告类对话框：#32770 是通用对话框类，不能整体跳过，只跳过 Windows 错误报告进程
+    inline bool IsCrashReporterDialog(std::wstring const& cls, std::wstring const& path)
+    {
+        if (cls != L"#32770") return false;
+        size_t p = path.find_last_of(L'\\');
+        std::wstring exe = (p == std::wstring::npos) ? path : path.substr(p + 1);
+        return exe == L"werfault.exe" || exe == L"dwwin.exe" || exe == L"werfaultsecure.exe";
+    }
+
     // 加权打分：输入 Features，返回 ≥0 的分数并填充 detail 明细；命中硬过滤（基础设施类/零尺寸）时返回 0 且 detail 为 *_skip。
     inline int ScoreWindow(Features const& f, std::wstring& detail)
     {
-        if (IsInfraClass(f.cls))
+        if (IsInfraClass(f.cls) || IsCrashReporterDialog(f.cls, f.path))
         {
             detail = L"infra_class_skip";
             return 0;

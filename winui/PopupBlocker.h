@@ -888,7 +888,9 @@ namespace PopupBlocker
             if (::GetWindowRect(hwnd, &r)) {
                 if (r.right - r.left <= 0 || r.bottom - r.top <= 0) return true;
             }
-            return HeuristicScorer::IsInfraClass(GetClass(hwnd));
+            std::wstring cls = GetClass(hwnd);
+            if (HeuristicScorer::IsInfraClass(cls)) return true;
+            return HeuristicScorer::IsCrashReporterDialog(cls, GetProcessName(hwnd));
         }
 
         inline EventVerdict EvaluateWindow(HWND hwnd, DWORD idEventTime, DWORD prevForegroundPid)
