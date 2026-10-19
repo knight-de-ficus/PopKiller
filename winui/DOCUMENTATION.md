@@ -142,7 +142,8 @@ MutateRules([&](std::vector<Rule>& rules, std::vector<std::wstring>&) {
 | `Match(hwnd)` | 句柄 | `int` | 0=未命中 1=白 2=黑；多条件/类名随机规则线性 AND 扫描 |
 | `Log(s)` | 日志行 | `void` | 写入内存缓冲，达 64KB 或 `FlushLog` 时落盘；新文件/空文件/超 1MB 时截断并写 BOM |
 | `PassEventFilter(hwnd, idObject, idChild)` | 句柄、对象、子ID | `bool` | 事件预过滤（跳过自身/非窗口/对象） |
-| `IsInfraWindow(hwnd)` | 句柄 | `bool` | 基础设施窗口判定（类名命中 `IsInfraClass` 或尺寸为 0）；焦点窃取分支同样用它跳过拖影/提示/IME/系统遮罩 |
+| `IsInfraWindow(hwnd)` | 句柄 | `bool` | 基础设施窗口判定（类名命中 `IsInfraClass`、崩溃报告对话框、覆盖层进程或尺寸为 0）；焦点窃取分支用它跳过拖影/提示/IME/系统遮罩/GameBar/RTSS |
+| `IsOverlayProcess(exe)` | 小写 exe 名 | `bool` | 游戏覆盖层进程：`gamebar*`、`rtss.exe`、`rtsshooksloader*` —— 全屏游戏时其新建窗口不算焦点窃取 |
 | `EvaluateWindow(hwnd, idEventTime)` | 句柄、事件时间 | `EventVerdict` | 综合评估：规则匹配+启发式+ML+raw |
 | `WriteEventLog(hwnd, idEvent, v)` | 句柄、事件、评估结果 | `void` | 写日志（含启发式明细+raw+ml） |
 | `EnforceBlock(hwnd)` | 句柄 | `void` | 关闭/隐藏窗口（黑名单与启发式命中一致） |

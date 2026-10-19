@@ -881,7 +881,18 @@ namespace PopupBlocker
             return true;
         }
 
-        // 基础设施窗口（与启发式硬过滤同源）：类名命中或尺寸为 0 → 不当作弹窗/焦点窃取
+        // 游戏覆盖层/OSD 进程：全屏游戏时它们新建的窗口不应算焦点窃取
+        inline bool IsOverlayProcess(std::wstring const& exe)
+        {
+            // Xbox 游戏栏：gamebar.exe / gamebarftserver.exe 等
+            if (exe.rfind(L"gamebar", 0) == 0) return true;
+            // RivaTuner Statistics Server（MSI Afterburner OSD）
+            if (exe == L"rtss.exe") return true;
+            if (exe.rfind(L"rtsshooksloader", 0) == 0) return true;
+            return false;
+        }
+
+        // 基础设施窗口（与启发式硬过滤同源）：类名命中、崩溃报告对话框、覆盖层进程或尺寸为 0 → 不当作弹窗/焦点窃取
         inline bool IsInfraWindow(HWND hwnd)
         {
             RECT r{};
@@ -890,7 +901,9 @@ namespace PopupBlocker
             }
             std::wstring cls = GetClass(hwnd);
             if (HeuristicScorer::IsInfraClass(cls)) return true;
-            return HeuristicScorer::IsCrashReporterDialog(cls, GetProcessName(hwnd));
+            std::wstring exe = GetProcessName(hwnd);
+            if (HeuristicScorer::IsCrashReporterDialog(cls, exe)) return true;
+            return IsOverlayProcess(exe);
         }
 
         inline EventVerdict EvaluateWindow(HWND hwnd, DWORD idEventTime, DWORD prevForegroundPid)
